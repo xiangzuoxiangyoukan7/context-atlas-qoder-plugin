@@ -1,0 +1,23 @@
+{
+  "acceptance": "acceptance.schema.json",
+  "acceptance_contract": "acceptance-contract.schema.json",
+  "independent_contract": "contract.schema.json",
+  "data_asset": "data-asset.schema.json",
+  "data_source": "data-source.schema.json",
+  "database_namespace": "database-namespace.schema.json",
+  "database_table": "database-table.schema.json",
+  "database_unit": "database-unit.schema.json",
+  "feature": "feature.schema.json",
+  "governance_task": "governance-task.schema.json",
+  "interface": "interface.schema.json",
+  "knowledge_proposal": "knowledge-proposal.schema.json",
+  "knowledge_item": "knowledge-item.schema.json",
+  "module": "module.schema.json",
+  "managed_source": "managed-source.schema.json",
+  "project_manifest": "project-manifest.schema.json",
+  "requirement": "requirement.schema.json",
+  "specification_change": "specification-change.schema.json",
+  "specification_delta": "specification-delta.schema.json",
+  "source": "source.schema.json",
+  "task": "task.schema.json"
+}

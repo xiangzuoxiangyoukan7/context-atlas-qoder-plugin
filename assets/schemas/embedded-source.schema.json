@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-atlas.dev/schemas/embedded-source.schema.json",
+  "title": "Context Atlas Embedded Source",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["type", "reference", "observed_at", "confirmation_status"],
+  "properties": {
+    "type": {"enum": ["user_statement", "repository_file", "command_output", "existing_document", "external_document", "ai_inference"]},
+    "reference": {"type": "string", "minLength": 1},
+    "observed_at": {"type": "string", "format": "date-time"},
+    "confirmation_status": {"enum": ["observed", "confirmed"]},
+    "confirmed_at": {"type": "string", "format": "date-time"}
+  },
+  "allOf": [{"if": {"properties": {"confirmation_status": {"const": "confirmed"}}}, "then": {"required": ["confirmed_at"]}}]
+}

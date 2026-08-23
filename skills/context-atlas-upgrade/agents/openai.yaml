@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Atlas Upgrade"
+  short_description: "安全升级已有 Context Atlas 知识库格式"
+  default_prompt: "使用 $context-atlas-upgrade 安全升级当前项目知识库格式。"

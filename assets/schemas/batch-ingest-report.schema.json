@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-atlas.local/schemas/batch-ingest-report.schema.json",
+  "title": "Context Atlas Batch Ingest Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "status", "source_count", "reports", "route_plan", "writes_performed", "confirmation_state"],
+  "allOf": [
+    {
+      "if": {"properties": {"status": {"const": "analyzed"}}},
+      "then": {
+        "properties": {
+          "source_count": {"maximum": 20},
+          "reports": {"minItems": 1}
+        }
+      }
+    }
+  ],
+  "properties": {
+    "operation": {"const": "batch_ingest"},
+    "status": {"enum": ["analyzed", "blocked"]},
+    "source_count": {"type": "integer", "minimum": 1},
+    "reports": {
+      "type": "array",
+      "minItems": 0,
+      "maxItems": 20,
+      "items": {"$ref": "ingest-report.schema.json"}
+    },
+    "route_plan": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"enum": ["context-atlas-add", "context-atlas-revise", "context-atlas-retire", "context-atlas-init", "context-atlas-upgrade"]}
+    },
+    "writes_performed": {"const": false},
+    "confirmation_state": {"const": "not_applicable"}
+  }
+}

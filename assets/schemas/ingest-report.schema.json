@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-atlas.local/schemas/ingest-report.schema.json",
+  "title": "Context Atlas Ingest Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "operation",
+    "status",
+    "source_identity",
+    "observed_at",
+    "source_digest_or_version",
+    "scope",
+    "candidates",
+    "route_plan",
+    "blocked_reasons",
+    "writes_performed",
+    "confirmation_state",
+    "next_action"
+  ],
+  "properties": {
+    "operation": {"const": "ingest"},
+    "status": {"enum": ["analyzed", "blocked"]},
+    "source_identity": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "reference"],
+      "properties": {
+        "type": {
+          "enum": ["user_statement", "repository_file", "command_output", "existing_document", "external_document"]
+        },
+        "reference": {"type": "string", "minLength": 1}
+      }
+    },
+    "observed_at": {"type": "string", "minLength": 1},
+    "source_digest_or_version": {"type": "string", "minLength": 1},
+    "scope": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+    "candidates": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/candidate"}
+    },
+    "route_plan": {
+      "type": "array",
+      "items": {
+        "enum": ["context-atlas-add", "context-atlas-revise", "context-atlas-retire", "context-atlas-init", "context-atlas-upgrade"]
+      },
+      "uniqueItems": true
+    },
+    "blocked_reasons": {"type": "array", "items": {"type": "string"}},
+    "writes_performed": {"const": false},
+    "confirmation_state": {"const": "not_applicable"},
+    "next_action": {"type": "string", "minLength": 1}
+  },
+  "$defs": {
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "candidate_id",
+        "candidate_action",
+        "target_id_or_path",
+        "facts",
+        "inferences",
+        "unknowns",
+        "conflicts",
+        "relation_candidates",
+        "impact_candidates",
+        "route_skill",
+        "rationale"
+      ],
+      "properties": {
+        "candidate_id": {"type": "string", "pattern": "^INGEST-CAND-[0-9]{3}$"},
+        "candidate_action": {"enum": ["add", "revise", "retire", "conflict", "ignore"]},
+        "target_id_or_path": {"type": "string"},
+        "facts": {"type": "array", "items": {"type": "string"}},
+        "inferences": {"type": "array", "items": {"type": "string"}},
+        "unknowns": {"type": "array", "items": {"type": "string"}},
+        "conflicts": {"type": "array", "items": {"type": "string"}},
+        "relation_candidates": {"type": "array", "items": {"type": "string"}},
+        "impact_candidates": {"type": "array", "items": {"type": "string"}},
+        "route_skill": {"enum": ["context-atlas-add", "context-atlas-revise", "context-atlas-retire", "none"]},
+        "rationale": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://context-atlas.dev/schemas/initialization-report.schema.json",
+  "title": "Context Atlas Initialization Report",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["operation", "project_root", "knowledge_base", "proposal_revision", "confirmation", "execution", "written_files", "technology_stacks", "validation", "unknowns", "conflicts", "next_action"],
+  "properties": {
+    "operation": {"enum": ["initialized", "failed"]},
+    "project_root": {"type": "string"},
+    "knowledge_base": {"type": "string"},
+    "proposal_revision": {"type": "string", "pattern": "^sha256:[a-f0-9]{64}$"},
+    "confirmation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state", "confirmed_revision"],
+      "properties": {
+        "state": {"const": "confirmed"},
+        "confirmed_revision": {"type": "string"}
+      }
+    },
+    "execution": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "runtime_detection"],
+      "properties": {
+        "mode": {"enum": ["python_executor", "agent_host"]},
+        "runtime_detection": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["performed_by", "platform", "attempts", "selected_command", "capability_checks"],
+          "properties": {
+            "performed_by": {"enum": ["agent_host", "python_executor"]},
+            "platform": {"type": "string", "minLength": 1},
+            "attempts": {
+              "type": "array",
+              "minItems": 1,
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["command", "result", "exit_code", "python_major"],
+                "properties": {
+                  "command": {"type": "string", "minLength": 1},
+                  "result": {"enum": ["available", "command_not_found", "windows_store_alias", "wrong_version", "failed"]},
+                  "exit_code": {"type": ["integer", "null"]},
+                  "python_major": {"type": ["integer", "null"]}
+                }
+              }
+            },
+            "selected_command": {"type": ["string", "null"]},
+            "capability_checks": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name", "result"],
+                "properties": {
+                  "name": {"enum": ["read", "create", "enumerate", "compare", "rename"]},
+                  "result": {"enum": ["passed", "failed", "not_required"]}
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "written_files": {"type": "array", "items": {"type": "string"}},
+    "technology_stacks": {"type": "array", "items": {"type": "object"}},
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result", "authority", "deterministic_validation", "command", "exit_code", "issue_count", "checks"],
+      "properties": {
+        "result": {"enum": ["passed", "failed"]},
+        "authority": {"enum": ["deterministic_executor", "agent_host"]},
+        "deterministic_validation": {"enum": ["passed", "failed", "not_run"]},
+        "command": {"type": "string"},
+        "exit_code": {"type": "integer"},
+        "issue_count": {"type": "integer", "minimum": 0},
+        "checks": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "result"],
+            "properties": {
+              "name": {"type": "string", "minLength": 1},
+              "result": {"enum": ["passed", "failed"]}
+            }
+          }
+        }
+      }
+    },
+    "unknowns": {"type": "array", "items": {"type": "string"}},
+    "conflicts": {"type": "array", "items": {"type": "string"}},
+    "next_action": {"type": "string"}
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"execution": {"properties": {"mode": {"const": "agent_host"}}}}},
+      "then": {
+        "properties": {
+          "validation": {
+            "properties": {
+              "authority": {"const": "agent_host"},
+              "deterministic_validation": {"const": "not_run"}
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {"properties": {"execution": {"properties": {"mode": {"const": "python_executor"}}}}},
+      "then": {
+        "properties": {
+          "validation": {
+            "properties": {
+              "authority": {"const": "deterministic_executor"},
+              "deterministic_validation": {"enum": ["passed", "failed"]}
+            }
+          }
+        }
+      }
+    }
+  ]
+}

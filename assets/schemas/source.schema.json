@@ -1,0 +1,13 @@
+{
+  "deprecated": true,
+  "description": "仅用于读取旧格式或可选公共来源登记；格式 4 及后续格式的知识依据使用 embedded-source.schema.json 内嵌到知识项。",
+  "required": ["id", "type", "title", "source_type", "reference", "last_updated"],
+  "enums": {
+    "type": ["source"],
+    "source_type": ["user_statement", "repository_file", "command_output", "existing_document", "external_document", "ai_inference"]
+  },
+  "patterns": {
+    "id": "SRC-\\d{3}",
+    "last_updated": "\\d{4}-\\d{2}-\\d{2}"
+  }
+}

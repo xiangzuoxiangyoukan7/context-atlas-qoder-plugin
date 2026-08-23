@@ -1,0 +1,14 @@
+{
+  "required": ["id", "type", "title", "feature", "status", "acceptance", "last_updated"],
+  "enums": {
+    "type": ["task"],
+    "status": ["draft", "ready", "in_progress", "blocked", "acceptance", "completed"]
+  },
+  "patterns": {
+    "id": "TASK-F\\d{2}-\\d{3}",
+    "feature": "F\\d{2}",
+    "last_updated": "\\d{4}-\\d{2}-\\d{2}"
+  },
+  "non_empty_lists": ["acceptance"],
+  "unique_lists": ["acceptance"]
+}

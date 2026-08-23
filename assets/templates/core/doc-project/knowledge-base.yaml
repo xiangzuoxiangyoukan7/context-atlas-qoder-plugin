@@ -1,0 +1,17 @@
+protocol_version: 1.0
+schema_version: 1.0
+project_id: {{PROJECT_ID}}
+project_name: {{PROJECT_NAME}}
+knowledge_base_name: {{KNOWLEDGE_BASE_NAME}}
+workspace_profile: {{WORKSPACE_PROFILE}}
+project_version: 0.1.0
+format_version: 7
+revision: 1
+initialized_at: {{INITIALIZED_AT}}
+authority:
+  overview: 00-项目总览/README.md
+  features: 01-功能基线/README.md
+  architecture: 02-架构与契约/README.md
+  acceptance: 03-变更与证据/验收矩阵.md
+  decisions: 04-决策记录/README.md
+  collaboration: 05-知识治理/AI知识采集协议.md

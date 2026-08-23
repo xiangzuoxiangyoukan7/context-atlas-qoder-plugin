@@ -1,0 +1,18 @@
+{
+  "required": ["id", "type", "title", "status", "checkpoint", "content_digest", "target_ids", "source_type", "source_reference", "proposed_by", "operated_by", "confirmed_by", "git_commit", "project_version", "captured_at"],
+  "enums": {
+    "type": ["knowledge_proposal"],
+    "status": ["proposed", "confirmed", "rejected", "applied"],
+    "checkpoint": ["user_decision", "requirement_change", "contract_change", "before_plan", "before_delivery", "after_acceptance", "before_release", "session_end"],
+    "source_type": ["user_statement", "repository_file", "command_output", "existing_document", "external_document", "ai_inference"]
+  },
+  "patterns": {
+    "id": "PROP-\\d{8}-[A-F0-9]{8}",
+    "content_digest": "[a-f0-9]{64}",
+    "proposed_by": "(?:PERSON|AGENT)-[A-Z0-9-]+",
+    "operated_by": "AGENT-[A-Z0-9-]+",
+    "project_version": "\\d+\\.\\d+\\.\\d+"
+  },
+  "non_empty_lists": ["target_ids"],
+  "unique_lists": ["target_ids"]
+}

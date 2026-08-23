@@ -1,0 +1,225 @@
+{
+  "version": 1,
+  "relations": [
+    {
+      "field": "rel_belongs_to",
+      "name_zh": "属于该数据库层级",
+      "source_prefixes": ["DB", "NS", "TABLE"],
+      "target_prefixes": ["DS", "DB", "NS"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"removed": "required", "renamed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_supported_by",
+      "name_zh": "由该来源支持",
+      "source_prefixes": ["*"],
+      "target_prefixes": ["SRC"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"source_invalid": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_conforms_to",
+      "name_zh": "遵循该规则",
+      "source_prefixes": ["*"],
+      "target_prefixes": ["RULE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"rule_changed": "review_required", "rule_removed": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_implements",
+      "name_zh": "实现该需求",
+      "source_prefixes": ["F", "FEATURE", "RULE"],
+      "target_prefixes": ["REQ"],
+      "direction": "forward_only",
+      "status": "deprecated",
+      "default_impact": "review_required",
+      "impact_rules": {"scope_removed": "required", "superseded": "required", "behavior_changed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_satisfies",
+      "name_zh": "满足该需求",
+      "source_prefixes": ["F", "FEATURE"],
+      "target_prefixes": ["REQ"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"scope_removed": "required", "superseded": "required", "behavior_changed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_primary_module",
+      "name_zh": "主要由该模块实现",
+      "source_prefixes": ["F", "FEATURE"],
+      "target_prefixes": ["MOD", "MODULE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"responsibility_changed": "required", "removed": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_participating_modules",
+      "name_zh": "由该模块参与实现",
+      "source_prefixes": ["F", "FEATURE"],
+      "target_prefixes": ["MOD", "MODULE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"responsibility_changed": "review_required", "removed": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_provides",
+      "name_zh": "提供该接口",
+      "source_prefixes": ["MOD", "MODULE"],
+      "target_prefixes": ["API", "RPC", "EVENT", "WEBHOOK", "FILE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"breaking_change": "required", "removed": "required", "deprecated": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_calls",
+      "name_zh": "调用或消费该接口",
+      "source_prefixes": ["F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "TASK"],
+      "target_prefixes": ["API", "RPC", "EVENT", "WEBHOOK", "FILE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"breaking_change": "required", "removed": "required", "deprecated": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_uses",
+      "name_zh": "复用该独立契约",
+      "source_prefixes": ["REQ", "F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "TASK"],
+      "target_prefixes": ["CONTRACT"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"breaking_change": "required", "removed": "required", "rule_changed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_exposes",
+      "name_zh": "对外提供该契约",
+      "source_prefixes": ["F", "FEATURE", "MOD", "MODULE"],
+      "target_prefixes": ["API", "RPC", "EVENT", "WEBHOOK", "FILE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"breaking_change": "required", "removed": "required", "deprecated": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_reads",
+      "name_zh": "读取该数据",
+      "source_prefixes": ["F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "TASK"],
+      "target_prefixes": ["TABLE", "DATA"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"field_removed": "required", "type_changed": "required", "enum_value_removed": "required", "field_description_changed": "review_required", "field_added_optional": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_writes",
+      "name_zh": "写入该数据",
+      "source_prefixes": ["F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "TASK"],
+      "target_prefixes": ["TABLE", "DATA"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"required_added": "required", "type_changed": "required", "enum_value_removed": "required", "default_changed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_depends_on",
+      "name_zh": "运行或业务上依赖",
+      "source_prefixes": ["F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "TASK"],
+      "target_prefixes": ["MOD", "MODULE", "DEP"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"unavailable": "required", "removed": "required", "breaking_change": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_verified_by",
+      "name_zh": "由该验收项证明",
+      "source_prefixes": ["REQ", "F", "FEATURE", "RULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "CONTRACT"],
+      "target_prefixes": ["AC", "F", "KB"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"behavior_changed": "review_required", "acceptance_invalid": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_changes",
+      "name_zh": "本次变更涉及",
+      "source_prefixes": ["CHG"],
+      "target_prefixes": ["*"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_supersedes",
+      "name_zh": "替代旧知识",
+      "source_prefixes": ["*"],
+      "target_prefixes": ["*"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"superseded": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_logical_parent",
+      "name_zh": "逻辑上引用主表",
+      "source_prefixes": ["TABLE"],
+      "target_prefixes": ["TABLE"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"key_changed": "required", "key_removed": "required", "type_changed": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_evidenced_by",
+      "name_zh": "由该次实际证据证明",
+      "source_prefixes": ["AC", "F", "KB"],
+      "target_prefixes": ["EVID"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"evidence_invalid": "required", "evidence_stale": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_scenario_for",
+      "name_zh": "验收该规范行为",
+      "source_prefixes": ["AC"],
+      "target_prefixes": ["REQ", "F", "FEATURE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "CLI", "AGENT", "CONTRACT"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"behavior_changed": "review_required", "removed": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_changed_by",
+      "name_zh": "由该规格变更修改",
+      "source_prefixes": ["DELTA"],
+      "target_prefixes": ["CHG"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"change_cancelled": "required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
+      "field": "rel_executes",
+      "name_zh": "执行该变更集中的工作",
+      "source_prefixes": ["TASK"],
+      "target_prefixes": ["CHG"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "review_required",
+      "impact_rules": {"scope_changed": "review_required", "change_cancelled": "required", "formatting_only": "informational", "file_moved": "informational"}
+    }
+  ]
+}

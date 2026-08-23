@@ -1,0 +1,74 @@
+---
+id: DATA-001
+type: data_asset
+title: 数据资产名称
+status: proposed
+version: 0.1.0
+sources: []
+owner: missing
+source_types: [database]
+sensitivity: missing
+retention: missing
+last_updated: {{INITIALIZED_AT}}
+---
+
+# 数据资产名称
+
+## 基本信息
+
+| 项目 | 内容 |
+| --- | --- |
+| 业务含义 | missing |
+| 所有者 | missing |
+| 敏感级别 | missing |
+
+## 数据来源
+
+| 来源类型 | 名称 | 流向 | 用途 | 技术契约 | 状态 |
+| --- | --- | --- | --- | --- | --- |
+| database | missing | missing | missing | missing | proposed |
+
+数据来源描述实际数据流；支撑本卡内容的证据直接记录在本卡的来源字段中。
+
+## 主要内容
+
+- 关键数据项：missing
+- 业务口径：missing
+- 使用范围：missing
+
+## 数据流转
+
+- 上游：missing
+- 处理：missing
+- 下游：missing
+
+技术细节链接至[数据库](../数据库/README.md)、[接口契约](../接口/README.md)或已确认的具体技术契约。
+
+## 质量要求
+
+- 完整性：missing
+- 准确性：missing
+- 时效性：missing
+- 校验方式：missing
+
+## 安全要求
+
+- 敏感级别：missing
+- 访问约束：missing
+- 脱敏要求：missing
+
+## 保存规则
+
+- 保存期限：missing
+- 删除或归档条件：missing
+- 法规或业务依据：missing
+
+## 依据与未决问题
+
+| 类型 | 内容 | 来源/责任人 | 状态 |
+| --- | --- | --- | --- |
+| 关联功能 | missing | missing | missing |
+| 技术契约 | missing | missing | missing |
+| 知识来源 | missing | missing | missing |
+| 批准信息 | missing | missing | missing |
+| 未决问题 | missing | missing | missing |

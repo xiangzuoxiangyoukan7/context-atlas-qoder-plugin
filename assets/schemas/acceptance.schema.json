@@ -1,0 +1,9 @@
+{
+  "required": ["id", "owner", "condition", "result", "evidence", "version"],
+  "enums": {
+    "result": ["not_started", "partial", "passed", "not_applicable"]
+  },
+  "patterns": {
+    "id": "(?:F\\d{2}|KB)-AC-\\d{2}"
+  }
+}

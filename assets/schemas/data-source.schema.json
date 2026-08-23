@@ -1,0 +1,14 @@
+{
+  "required": ["id", "type", "title", "status", "product", "product_version", "owner", "config_reference", "environments", "sources", "last_updated"],
+  "enums": {
+    "type": ["data_source"],
+    "status": ["missing", "proposed", "approved", "conflicted", "stale", "superseded", "archived"],
+    "product": ["oracle", "postgresql", "kingbasees", "mysql", "other"]
+  },
+  "patterns": {
+    "id": "DS-[A-Z0-9-]+",
+    "last_updated": "\\d{4}-\\d{2}-\\d{2}"
+  },
+  "non_empty_lists": ["environments", "sources"],
+  "unique_lists": ["environments", "sources"]
+}

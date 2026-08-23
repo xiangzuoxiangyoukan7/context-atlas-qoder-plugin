@@ -1,0 +1,12 @@
+{
+  "name": "context-atlas",
+  "version": "0.11.0",
+  "displayName": "Context Atlas",
+  "description": "通过统一协议初始化、维护和验证项目知识库",
+  "author": {
+    "name": "Context Atlas Maintainers"
+  },
+  "repository": "https://github.com/xiangzuoxiangyoukan7/context-atlas",
+  "keywords": ["knowledge-base", "project-context", "traceability"],
+  "skills": "./skills/"
+}

@@ -1,0 +1,83 @@
+{
+  "format_version": 1,
+  "rules": [
+    {
+      "id": "RULE-CODE-001",
+      "name_zh": "Python 代码必须具有说明和类型标注",
+      "authority": "[[rules/知识治理规则#RULE-CODE-001|RULE-CODE-001]]",
+      "enforced_by": ["acceptance", "validator"]
+    },
+    {
+      "id": "RULE-CODE-002",
+      "name_zh": "Python 说明必须覆盖用途、场景和关键逻辑",
+      "authority": "[[rules/知识治理规则#RULE-CODE-002|RULE-CODE-002]]",
+      "enforced_by": ["acceptance", "validator"]
+    },
+    {
+      "id": "RULE-AGENT-001",
+      "name_zh": "正式写入必须基于已确认提案",
+      "authority": "[[rules/知识治理规则#RULE-AGENT-001|RULE-AGENT-001]]",
+      "enforced_by": ["acceptance", "operation", "skill"]
+    },
+    {
+      "id": "RULE-ARCHIVE-001",
+      "name_zh": "归档必须在替代和引用迁移后确认执行",
+      "authority": "[[rules/知识治理规则#RULE-ARCHIVE-001|RULE-ARCHIVE-001]]",
+      "enforced_by": ["acceptance", "operation", "template", "validator"]
+    },
+    {
+      "id": "RULE-DB-001",
+      "name_zh": "数据库表字段必须记录值域和逻辑外键",
+      "authority": "[[rules/知识治理规则#RULE-DB-001|RULE-DB-001]]",
+      "enforced_by": ["acceptance", "operation", "template"]
+    },
+    {
+      "id": "RULE-GOV-001",
+      "name_zh": "每条正式规则只有一个中文权威来源",
+      "authority": "[[rules/知识治理规则#RULE-GOV-001|RULE-GOV-001]]",
+      "enforced_by": ["acceptance", "validator"]
+    },
+    {
+      "id": "RULE-GOV-002",
+      "name_zh": "规则使用方主动引用并接受覆盖检查",
+      "authority": "[[rules/知识治理规则#RULE-GOV-002|RULE-GOV-002]]",
+      "enforced_by": ["acceptance", "validator"]
+    },
+    {
+      "id": "RULE-GOV-003",
+      "name_zh": "当前变更是可选知识而不是任务执行门禁",
+      "authority": "[[rules/知识治理规则#RULE-GOV-003|RULE-GOV-003]]",
+      "enforced_by": ["acceptance", "template", "validator"]
+    },
+    {
+      "id": "RULE-IMPACT-001",
+      "name_zh": "业务影响由关系分析与验收证据共同判断",
+      "authority": "[[rules/知识治理规则#RULE-IMPACT-001|RULE-IMPACT-001]]",
+      "enforced_by": ["acceptance", "operation", "skill"]
+    },
+    {
+      "id": "RULE-IMPACT-002",
+      "name_zh": "影响分析只提供三级人工决策输入",
+      "authority": "[[rules/知识治理规则#RULE-IMPACT-002|RULE-IMPACT-002]]",
+      "enforced_by": ["acceptance", "operation", "skill", "template", "validator"]
+    },
+    {
+      "id": "RULE-REL-001",
+      "name_zh": "关系必须同时引用目标文件和稳定知识编号",
+      "authority": "[[rules/知识治理规则#RULE-REL-001|RULE-REL-001]]",
+      "enforced_by": ["acceptance", "operation"]
+    },
+    {
+      "id": "RULE-REL-002",
+      "name_zh": "关系只保存统一的权威正向链接",
+      "authority": "[[rules/知识治理规则#RULE-REL-002|RULE-REL-002]]",
+      "enforced_by": ["acceptance", "operation", "skill", "template", "validator"]
+    },
+    {
+      "id": "RULE-SRC-001",
+      "name_zh": "正式知识和质检结果必须引用来源与目标",
+      "authority": "[[rules/知识治理规则#RULE-SRC-001|RULE-SRC-001]]",
+      "enforced_by": ["acceptance", "schema", "validator"]
+    }
+  ]
+}

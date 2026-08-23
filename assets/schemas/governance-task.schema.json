@@ -1,0 +1,13 @@
+{
+  "required": ["id", "type", "title", "plan", "status", "acceptance", "last_updated"],
+  "enums": {
+    "type": ["governance_task"],
+    "status": ["draft", "ready", "in_progress", "blocked", "acceptance", "completed"]
+  },
+  "patterns": {
+    "id": "TASK-KB-\\d{3}",
+    "last_updated": "\\d{4}-\\d{2}-\\d{2}"
+  },
+  "non_empty_lists": ["acceptance"],
+  "unique_lists": ["acceptance"]
+}

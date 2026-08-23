@@ -1,0 +1,11 @@
+{
+  "required": ["id", "type", "title", "status", "change_id", "target_id", "operation", "base_version", "sources", "last_updated"],
+  "enums": {
+    "type": ["specification_delta"],
+    "status": ["proposed", "approved", "applied", "rejected", "superseded"],
+    "operation": ["added", "modified", "removed", "renamed", "superseded"]
+  },
+  "patterns": {"id": "DELTA-CHG-[A-Z0-9_-]+", "base_version": "\\d+\\.\\d+\\.\\d+", "last_updated": "\\d{4}-\\d{2}-\\d{2}"},
+  "non_empty_lists": ["sources"],
+  "unique_lists": ["sources"]
+}

@@ -1,0 +1,15 @@
+{
+  "name": "context-atlas",
+  "owner": {
+    "name": "Context Atlas Maintainers"
+  },
+  "plugins": [
+    {
+      "name": "context-atlas",
+      "source": "./",
+      "category": "Productivity",
+      "tags": ["knowledge-base", "project-context", "traceability"],
+      "strict": true
+    }
+  ]
+}

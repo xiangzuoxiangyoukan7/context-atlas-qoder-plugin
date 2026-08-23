@@ -1,0 +1,15 @@
+{
+  "required": ["id", "type", "title", "status", "version", "unit_kind", "physical_name", "owner", "sources", "rel_belongs_to", "last_updated"],
+  "enums": {
+    "type": ["database_unit"],
+    "status": ["missing", "proposed", "approved", "conflicted", "stale", "superseded", "archived"],
+    "unit_kind": ["database", "pdb", "logical_database", "other"]
+  },
+  "patterns": {
+    "id": "DB-[A-Z0-9-]+",
+    "version": "\\d+\\.\\d+\\.\\d+",
+    "last_updated": "\\d{4}-\\d{2}-\\d{2}"
+  },
+  "non_empty_lists": ["sources", "rel_belongs_to"],
+  "unique_lists": ["sources", "rel_belongs_to"]
+}

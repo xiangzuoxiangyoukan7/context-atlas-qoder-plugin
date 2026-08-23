@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Atlas Add"
+  short_description: "向已有知识库新增正式且可追溯的业务知识"
+  default_prompt: "使用 $context-atlas-add 向当前项目知识库新增一项正式业务知识。"

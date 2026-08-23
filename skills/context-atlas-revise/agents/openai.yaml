@@ -1,0 +1,4 @@
+interface:
+  display_name: "Context Atlas Revise"
+  short_description: "修订、同步或替代已有的正式业务知识"
+  default_prompt: "使用 $context-atlas-revise 修订当前项目知识库中的已有业务知识。"
