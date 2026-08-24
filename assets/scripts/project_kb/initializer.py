@@ -281,8 +281,15 @@ def initialize_from_assets(
     if not template.is_dir() or not schema_root.is_dir():
         raise ValueError("Skill assets are incomplete")
 
-    # 先在同一文件系统完成复制和验证，最后原子改名，避免暴露半成品目标。
-    staging = project_root / f".{target.name}.initializing-{uuid.uuid4().hex[:8]}"
+    # 所有操作暂存都收敛在固定目录的独立子目录中，避免项目根目录散落随机目录。
+    # 暂存根与最终目标位于同一文件系统，验证后仍可原子改名。
+    temporary_root = project_root / ".context-atlas-tmp"
+    if temporary_root.exists() and (temporary_root.is_symlink() or not temporary_root.is_dir()):
+        raise ValueError("Context Atlas temporary root must be a regular directory")
+    temporary_root.mkdir(exist_ok=True)
+    operation_root = temporary_root / f"initialize-{uuid.uuid4().hex[:8]}"
+    operation_root.mkdir()
+    staging = operation_root / target.name
     staging.mkdir()
     try:
         shutil.copytree(template, staging, dirs_exist_ok=True)
@@ -331,3 +338,6 @@ def initialize_from_assets(
         if staging.exists():
             shutil.rmtree(staging)
         raise
+    finally:
+        if operation_root.exists():
+            shutil.rmtree(operation_root)
