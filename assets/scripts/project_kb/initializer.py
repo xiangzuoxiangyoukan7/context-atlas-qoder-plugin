@@ -9,6 +9,7 @@ import json
 import shutil
 import uuid
 from .validator import ValidationConfig, validate
+from .agent_entry import apply_entry
 
 
 MARKER_PATTERN = re.compile(r"{{[A-Z][A-Z0-9_]*}}")
@@ -260,6 +261,7 @@ def initialize_from_assets(
     proposal: dict[str, object] | None = None,
     project_display_name: str | None = None,
     workspace_profile: str = "standard",
+    agent_entry: dict[str, str] | None = None,
 ) -> Path:
     """从 Skill 资产创建自包含且已验证的新知识库。"""
 
@@ -311,6 +313,19 @@ def initialize_from_assets(
         if target.exists():
             raise FileExistsError(f"knowledge-base target appeared during initialization: {target}")
         staging.replace(target)
+        if agent_entry is not None:
+            entry_path = project_root / agent_entry["filename"]
+            original_entry = entry_path.read_bytes() if entry_path.exists() else None
+            try:
+                apply_entry(project_root, agent_entry["host"], agent_entry["filename"], target.name)
+            except Exception:
+                if original_entry is None:
+                    if entry_path.exists():
+                        entry_path.unlink()
+                else:
+                    entry_path.write_bytes(original_entry)
+                shutil.rmtree(target)
+                raise
         return target
     except Exception:
         if staging.exists():

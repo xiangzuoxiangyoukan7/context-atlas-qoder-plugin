@@ -54,6 +54,7 @@
     "scripts/check_rule_coverage.py",
     "scripts/inspect_sdd_workspace.py",
     "scripts/project_kb/__init__.py",
+    "scripts/project_kb/agent_entry.py",
     "scripts/project_kb/agent_operation.py",
     "scripts/project_kb/archive.py",
     "scripts/project_kb/archive_validation.py",

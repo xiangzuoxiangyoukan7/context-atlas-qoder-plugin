@@ -8,6 +8,8 @@ from pathlib import Path
 import re
 from typing import Any
 
+from .agent_entry import validate_entry
+
 
 REVISION_RE = re.compile(r"^sha256:[a-f0-9]{64}$")
 SAFE_ID_RE = re.compile(r"^[A-Z]+-[0-9]{3}$")
@@ -140,7 +142,7 @@ def validate_initialization_proposal(proposal: object) -> dict[str, Any]:
     root = _object(
         proposal,
         "proposal",
-        {"operation", "proposal_revision", "project", "facts", "unknowns", "conflicts"},
+        {"operation", "proposal_revision", "project", "facts", "unknowns", "conflicts", "agent_entry"},
         {"operation", "proposal_revision", "project", "facts", "unknowns", "conflicts"},
     )
     if root["operation"] != "initialize":
@@ -210,6 +212,14 @@ def validate_initialization_proposal(proposal: object) -> dict[str, Any]:
             })
         return result
 
+    agent_entry = None
+    if "agent_entry" in root:
+        entry = _object(root["agent_entry"], "proposal.agent_entry", {"host", "filename"}, {"host", "filename"})
+        host = _text(entry["host"], "proposal.agent_entry.host")
+        filename = _text(entry["filename"], "proposal.agent_entry.filename")
+        validate_entry(host, filename)
+        agent_entry = {"host": host, "filename": filename}
+
     return {
         "operation": "initialize",
         "proposal_revision": revision,
@@ -223,4 +233,5 @@ def validate_initialization_proposal(proposal: object) -> dict[str, Any]:
         "facts": normalized_facts,
         "unknowns": open_items("unknowns"),
         "conflicts": open_items("conflicts"),
+        "agent_entry": agent_entry,
     }

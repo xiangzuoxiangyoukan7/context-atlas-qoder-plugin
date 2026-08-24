@@ -33,3 +33,14 @@ py scripts/build_plugin.py qoder --output build/qoder/context-atlas
 ```
 
 初始化和维护只生成 Proposal；必须明确回复“确认”后才会写入正式知识库。
+
+## 升级插件
+
+确认 Qoder Marketplace 当前选择的是目标项目的 **Project** 范围，然后执行：
+
+```powershell
+qoder plugins marketplace update context-atlas
+qoder plugins update context-atlas@context-atlas
+```
+
+升级后重启 Qoder，在插件管理界面确认实际版本，并再次检查八个 Skill 是否完整加载。

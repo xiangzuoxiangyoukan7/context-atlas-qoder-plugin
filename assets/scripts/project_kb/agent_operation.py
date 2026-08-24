@@ -225,6 +225,7 @@ def execute_initialization_proposal(
         proposal=normalized,
         project_display_name=str(project["name"]),
         workspace_profile=str(project["workspace_profile"]),
+        agent_entry=normalized.get("agent_entry"),
     )
     schema_root = target / ".project-kb" / "schemas"
     validation_issues = validate(target, ValidationConfig(schema_root=schema_root))
@@ -234,6 +235,10 @@ def execute_initialization_proposal(
         for path in sorted(target.rglob("*"))
         if path.is_file()
     )
+    if normalized.get("agent_entry"):
+        entry = normalized["agent_entry"]
+        assert isinstance(entry, dict)
+        written_files = (*written_files, str(entry["filename"]))
     facts = normalized["facts"]
     assert isinstance(facts, dict)
     unknowns = tuple(str(item["id"]) for item in normalized["unknowns"])

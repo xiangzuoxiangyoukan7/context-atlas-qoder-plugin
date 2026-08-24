@@ -42,6 +42,15 @@
     },
     "unknowns": {"type": "array", "items": {"$ref": "#/$defs/open_item"}},
     "conflicts": {"type": "array", "items": {"$ref": "#/$defs/open_item"}}
+    ,"agent_entry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["host", "filename"],
+      "properties": {
+        "host": {"enum": ["codex", "claude", "qoder", "trae"]},
+        "filename": {"enum": ["AGENTS.md", "CLAUDE.md"]}
+      }
+    }
   },
   "$defs": {
     "source": {
