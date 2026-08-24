@@ -1,0 +1,6 @@
+interface:
+  display_name: "context-atlas-work"
+  short_description: "从自然语言开发目标自动编排知识查询、审查、确认与维护流程"
+  default_prompt: "使用 $context-atlas-work 分析当前开发目标，并自动编排所需的知识查询、确认与维护流程。"
+policy:
+  allow_implicit_invocation: true

@@ -26,7 +26,7 @@ def render_entry_block(knowledge_base_name: str) -> str:
 
     skills = ", ".join(
         f"`context-atlas-{name}`"
-        for name in ("init", "navigate", "review", "ingest", "add", "revise", "retire", "upgrade")
+        for name in ("work", "init", "navigate", "review", "ingest", "add", "revise", "retire", "upgrade")
     )
     return "\n".join(
         [
@@ -36,7 +36,7 @@ def render_entry_block(knowledge_base_name: str) -> str:
             f"本项目使用 Context Atlas 管理项目事实，知识库位于 `{knowledge_base_name}/`。",
             "当任务涉及项目架构、约束、功能、接口、数据库、变更、验收证据或来源时，先读取相关知识库内容。",
             "",
-            f"可用 Skill：{skills}。",
+            f"可用 Skill：{skills}。普通开发目标优先由 `context-atlas-work` 自动编排，无需用户手动选择底层操作符。",
             "初始化、维护、退役或格式升级前，必须遵循：",
             "`inspect → propose → await_confirmation → apply → validate → report`。",
             "没有用户明确确认时，只能读取、分析和展示 Proposal，不得写入正式知识库。",

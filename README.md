@@ -17,11 +17,12 @@ qoder plugins install context-atlas@context-atlas
 py scripts/build_plugin.py qoder --output build/qoder/context-atlas
 ```
 
-安装后重启 Qoder，在输入框中输入 `/` 检查八个 Context Atlas Skill 是否出现。
+安装后重启 Qoder，在输入框中输入 `/` 检查九个 Context Atlas Skill 是否出现。
 
 ## 使用
 
 ```text
+/context-atlas-work
 /context-atlas-init
 /context-atlas-navigate
 /context-atlas-review
@@ -43,4 +44,4 @@ qoder plugins marketplace update context-atlas
 qoder plugins update context-atlas@context-atlas
 ```
 
-升级后重启 Qoder，在插件管理界面确认实际版本，并再次检查八个 Skill 是否完整加载。
+升级后重启 Qoder，在插件管理界面确认实际版本，并再次检查九个 Skill 是否完整加载。
