@@ -135,7 +135,7 @@ def _render_interface(root: Path, item: dict[str, object]) -> None:
     lines = [
         "---", f"id: {identifier}", "type: interface", f"title: {identifier}",
         f"status: {_knowledge_status(item)}", f"interface_kind: {kinds.get(prefix, 'function')}",
-        "visibility: internal", "version: v1", "sources:", *_embedded_source_lines(item),
+        "visibility: internal", "content_revision: 1", "api_version: v1", "sources:", *_embedded_source_lines(item),
         "rel_reads: []", "rel_writes: []", "rel_depends_on: []", "rel_verified_by: []",
         f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}", "",
         "## 入口、输入与输出", "", _cell(item["value"]), "", "## 错误语义", "", "待确认。", "",

@@ -1,38 +1,42 @@
 {
-  "version": 1,
-  "plugin_version": "0.1.0",
-  "reads_format_versions": [1, 2, 3, 4, 5, 6, 7],
-  "creates_format_version": 7,
+  "manifest_version": 1,
+  "supported_format_versions": [1, 2, 3, 4, 5, 6, 7, 8],
+  "created_format_version": 8,
   "conversions": [
     {
       "from": 1,
-      "to": 7,
+      "to": 8,
       "id": "embedded-sources-and-knowledge-governance"
     },
     {
       "from": 2,
-      "to": 7,
+      "to": 8,
       "id": "knowledge-governance-layout-and-embedded-sources"
     },
     {
       "from": 3,
-      "to": 7,
+      "to": 8,
       "id": "embedded-sources"
     },
     {
       "from": 4,
-      "to": 7,
+      "to": 8,
       "id": "typed-knowledge-and-simplified-contract-layout"
     },
     {
       "from": 5,
-      "to": 7,
+      "to": 8,
       "id": "changes-and-evidence-without-task-packages"
     },
     {
       "from": 6,
-      "to": 7,
+      "to": 8,
       "id": "specification-readiness-and-change-workspaces"
+    },
+    {
+      "from": 7,
+      "to": 8,
+      "id": "unified-version-model"
     }
   ]
 }

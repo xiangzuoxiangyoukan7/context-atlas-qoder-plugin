@@ -4,7 +4,8 @@ type: independent_contract
 title: 契约名称
 status: proposed
 scope: project
-version: v1
+content_revision: 1
+contract_version: v1
 sources: []
 rel_conforms_to: []
 rel_verified_by: []

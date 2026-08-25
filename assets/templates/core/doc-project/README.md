@@ -50,7 +50,7 @@
 
 ## 格式要求
 
-本知识库当前磁盘格式为 `format_version: 7`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。
+本知识库当前磁盘格式为 `format_version: 8`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。只有 `format_version` 参与兼容判断；`project_version`、`knowledge_revision` 和领域对象版本各自保持独立语义。
 
 通用格式示例：
 
@@ -60,7 +60,7 @@
   type: module
   title: 示例模块
   status: approved
-  version: 1.0.0
+  content_revision: 1
   sources:
     - type: repository_file
       reference: src/example/README.md

@@ -1,5 +1,5 @@
 {
-  "required": ["id", "type", "title", "status", "version", "sources", "owner", "source_types", "sensitivity", "retention", "last_updated"],
+  "required": ["id", "type", "title", "status", "sources", "owner", "source_types", "sensitivity", "retention", "last_updated"],
   "enums": {
     "type": ["data_asset"],
     "status": ["missing", "proposed", "approved", "conflicted", "stale", "superseded", "archived"],
@@ -11,6 +11,7 @@
   "patterns": {
     "id": "DATA-\\d{3}",
     "version": "\\d+\\.\\d+\\.\\d+",
+    "content_revision": "\\d+",
     "last_updated": "\\d{4}-\\d{2}-\\d{2}"
   },
   "non_empty_lists": ["sources", "source_types"],

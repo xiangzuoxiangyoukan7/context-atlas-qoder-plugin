@@ -1,5 +1,5 @@
 {
-  "required": ["id", "type", "title", "status", "version", "original_reference", "managed_path", "sha256", "mime_type", "size_bytes", "sensitivity", "sources", "last_updated"],
+  "required": ["id", "type", "title", "status", "content_revision", "original_reference", "managed_path", "sha256", "mime_type", "size_bytes", "sensitivity", "sources", "last_updated"],
   "enums": {
     "type": ["managed_source"],
     "status": ["approved", "superseded", "archived"],
@@ -7,7 +7,7 @@
   },
   "patterns": {
     "id": "SRC-EXT-[A-F0-9]{12}",
-    "version": "\\d+\\.\\d+\\.\\d+",
+    "content_revision": "\\d+",
     "sha256": "[a-f0-9]{64}",
     "size_bytes": "\\d+",
     "last_updated": "\\d{4}-\\d{2}-\\d{2}"
