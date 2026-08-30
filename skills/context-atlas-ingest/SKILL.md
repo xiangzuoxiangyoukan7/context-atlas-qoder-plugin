@@ -1,6 +1,6 @@
 ---
 name: context-atlas-ingest
-description: Read one or a bounded batch of located sources and map them to add, revise, retire, conflict, or ignore candidates. Supports explicit single-URL web sources and optional sanitized non-formal history. Use only when explicitly invoked; never writes formal knowledge or invokes maintenance Skills.
+description: Inspect one located source or a bounded batch and return read-only maintenance candidates. Use only when explicitly invoked; it never changes formal project knowledge, approves facts, or invokes maintenance Skills.
 ---
 
 # Context Atlas Ingest
@@ -21,8 +21,8 @@ Discover relevant current knowledge progressively with `children -> neighbors ->
 
 Return a complete report conforming to `../../assets/schemas/ingest-report.schema.json` for every source. For a batch, also return one aggregate object conforming to `../../assets/schemas/batch-ingest-report.schema.json`. This includes all early-return and `blocked` outcomes; use empty arrays and explicit blocker values instead of omitting required fields. When the requested batch exceeds 20 sources, return `status: blocked`, the actual requested `source_count`, and empty `reports` and `route_plan` without analyzing any source. Candidate actions are only `add`, `revise`, `retire`, `conflict`, or `ignore`. Preserve facts, explicit inferences, unknowns, competing sources, candidate relations, impacts, routing rationale, and one aggregate `route_plan`.
 
-The final response must be the complete JSON report itself, with every required top-level field present. Do not replace it with a prose summary, even when the analysis found a conflict or the next action needs user judgment.
+The final response must be the complete JSON report itself, with every required top-level field present. Before returning it, check the report against the applicable packaged ingest-report Schema and treat a Schema mismatch as `blocked`; do not return a prose substitute when validation fails or user judgment is required.
 
 Always report `writes_performed: false` and `confirmation_state: not_applicable`. Do not create a file, write the pending queue, produce a confirmed revision, call an executor, or invoke `$context-atlas-add`, `$context-atlas-revise`, or `$context-atlas-retire`. Recommend the smallest explicit maintenance-Skill combination as `next_action`; the later maintenance flow must reinspect current state and build one atomic Proposal.
 
-Ordinary queries never trigger candidate capture. If the user explicitly asks to save ingest history, first produce and redact the report, then use the packaged `ingest-history-save` operation to write only `.context-atlas/ingest-history/`; this non-formal runtime write is not formal knowledge and must obey the 100-record/30-day retention policy. Without that explicit request, create no history.
+Ordinary queries never trigger candidate capture. If the user explicitly asks to save ingest history, first produce and redact the report, then use the packaged `ingest-history-save` operation to write only `.context-atlas/ingest-history/`; this is an optional non-formal runtime record, not project knowledge or a violation of the formal read-only boundary, and it must obey the 100-record/30-day retention policy. Without that explicit request, create no history.

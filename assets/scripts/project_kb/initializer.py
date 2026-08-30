@@ -23,7 +23,6 @@ OBSIDIAN_COLOR_GROUPS = (
     ("[type:database_table OR database_unit OR database_namespace OR data_source]", 3447003),
     ("[type:data_asset]", 16766720),
     ("[type:adr]", 16744448),
-    ("[type:acceptance_contract]", 6737151),
     ("[type:specification_change OR specification_delta]", 10040012),
 )
 
@@ -107,6 +106,16 @@ def _knowledge_status(fact: dict[str, object]) -> str:
     return "approved" if fact.get("status") == "confirmed" else "proposed"
 
 
+def _interface_business_name(item: dict[str, object]) -> str:
+    """从已确认的具体接口观察生成可读且可移植的名称片段。"""
+
+    value = _cell(item["value"]).strip()
+    normalized = re.sub(r"[\\/:*?\"<>|{}]+", "-", value)
+    normalized = re.sub(r"\s+", "-", normalized).strip("-. ")
+    normalized = re.sub(r"-+", "-", normalized)
+    return normalized[:80] or "待确认用途"
+
+
 def _render_module(root: Path, item: dict[str, object]) -> None:
     """把模块观察写成可独立引用的模块契约。"""
 
@@ -128,20 +137,21 @@ def _render_interface(root: Path, item: dict[str, object]) -> None:
     """把接口观察写成统一接口契约并按编号确定通信类型。"""
 
     identifier = _cell(item["id"])
+    business_name = _interface_business_name(item)
     source = item["source"]
     assert isinstance(source, dict)
     prefix = identifier.split("-", 1)[0]
     kinds = {"API": "http", "RPC": "rpc", "EVENT": "event", "WEBHOOK": "webhook", "FILE": "file"}
     lines = [
-        "---", f"id: {identifier}", "type: interface", f"title: {identifier}",
+        "---", f"id: {identifier}", "type: interface", f"title: {business_name}",
         f"status: {_knowledge_status(item)}", f"interface_kind: {kinds.get(prefix, 'function')}",
-        "visibility: internal", "version: v1", "sources:", *_embedded_source_lines(item),
+        "visibility: internal", "content_revision: 1", "api_version: v1", "sources:", *_embedded_source_lines(item),
         "rel_reads: []", "rel_writes: []", "rel_depends_on: []", "rel_verified_by: []",
-        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}", "",
+        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}：{business_name}", "",
         "## 入口、输入与输出", "", _cell(item["value"]), "", "## 错误语义", "", "待确认。", "",
         "## 版本、兼容与敏感字段", "", "待确认。", "",
     ]
-    (root / "02-架构与契约" / "接口" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    (root / "02-架构与契约" / "接口" / f"{identifier}-{business_name}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:

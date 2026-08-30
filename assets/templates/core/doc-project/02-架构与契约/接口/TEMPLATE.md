@@ -8,7 +8,8 @@ lifecycle_status: candidate
 spec_readiness: draft
 interface_kind: agent_operation
 visibility: internal
-version: v1
+content_revision: 1
+api_version: v1
 sources: []
 rel_reads: []
 rel_writes: []

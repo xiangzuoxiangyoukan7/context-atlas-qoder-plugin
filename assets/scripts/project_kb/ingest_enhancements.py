@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import hashlib
 import ipaddress
 import json
@@ -136,7 +136,7 @@ def fetch_web_snapshot(
     return WebSnapshot(
         original_url=url,
         final_url=final_url,
-        observed_at=(observed_at or datetime.now(UTC)).isoformat(),
+        observed_at=(observed_at or datetime.now(timezone.utc)).isoformat(),
         content_sha256=hashlib.sha256(body).hexdigest(),
         content_type=content_type,
         text=text,
@@ -170,7 +170,7 @@ def save_ingest_history(
     root = project_root.resolve()
     if not root.is_dir():
         raise ValueError("project root does not exist")
-    now = recorded_at or datetime.now(UTC)
+    now = recorded_at or datetime.now(timezone.utc)
     history = root / ".context-atlas" / "ingest-history"
     history.mkdir(parents=True, exist_ok=True)
     safe_report = _sanitize(report)
@@ -197,7 +197,7 @@ def save_ingest_history(
             record = json.loads(path.read_text(encoding="utf-8"))
             timestamp = datetime.fromisoformat(str(record["recorded_at"]))
         except (OSError, ValueError, KeyError, json.JSONDecodeError):
-            timestamp = datetime.fromtimestamp(path.stat().st_mtime, UTC)
+            timestamp = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
         if timestamp < cutoff:
             path.unlink()
             removed.append(path.name)

@@ -1,4 +1,4 @@
 interface:
-  display_name: "Context Atlas Navigate"
-  short_description: "Browse the knowledge tree and relationship graph"
-  default_prompt: "Use $context-atlas-navigate to discover relevant knowledge through the directory tree or relationship graph."
+  display_name: "context-atlas-navigate"
+  short_description: "渐进浏览知识目录与关系图谱"
+  default_prompt: "使用 $context-atlas-navigate 通过知识目录或关系图谱渐进发现相关知识。"

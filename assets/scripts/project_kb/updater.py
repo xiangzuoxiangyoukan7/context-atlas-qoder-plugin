@@ -55,6 +55,15 @@ def execute_update(
         seen.add(target)
         replacements.append((target, target.read_bytes() if target.exists() else None, change.content_file.read_bytes()))
 
+    manifest = root / "knowledge-base.yaml"
+    manifest_previous = manifest.read_bytes()
+    manifest_text = manifest_previous.decode("utf-8")
+    format_version = 1
+    for line in manifest_text.splitlines():
+        if line.startswith("format_version:"):
+            format_version = int(line.split(":", maxsplit=1)[1].strip())
+            break
+
     def rollback() -> None:
         """恢复本次操作涉及的全部文件。"""
 
@@ -63,6 +72,8 @@ def execute_update(
                 target.unlink(missing_ok=True)
             else:
                 target.write_bytes(previous)
+        if format_version >= 8:
+            manifest.write_bytes(manifest_previous)
 
     try:
         for target, _, content in replacements:
@@ -71,6 +82,18 @@ def execute_update(
                 handle.write(content)
                 temporary = Path(handle.name)
             temporary.replace(target)
+
+        if format_version >= 8:
+            lines = manifest_text.splitlines(keepends=True)
+            for index, line in enumerate(lines):
+                if not line.startswith("knowledge_revision:"):
+                    continue
+                current = int(line.split(":", maxsplit=1)[1].strip())
+                lines[index] = f"knowledge_revision: {current + 1}\n"
+                break
+            else:
+                raise ValueError("format 8 manifest requires knowledge_revision")
+            manifest.write_text("".join(lines), encoding="utf-8", newline="\n")
 
         issues = validate(
             root,
@@ -89,6 +112,8 @@ def execute_update(
     changed_files = tuple(
         target.relative_to(root).as_posix() for target, _, _ in replacements
     ) if not issues else ()
+    if not issues and format_version >= 8:
+        changed_files += ("knowledge-base.yaml",)
     return OperationReport(
         operation="updated",
         target=root,

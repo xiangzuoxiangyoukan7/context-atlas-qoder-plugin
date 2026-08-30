@@ -1,6 +1,6 @@
 ---
 name: context-atlas-init
-description: Initialize a new self-contained Context Atlas project knowledge base. Use when the user explicitly invokes context-atlas-init for a project that does not yet contain its doc-* knowledge-base directory.
+description: Initialize the first self-contained Context Atlas knowledge base for a project. Use only when explicitly invoked and no current doc-* knowledge base exists; never use it to repair, replace, or add a second knowledge base.
 ---
 
 # Context Atlas Init
@@ -11,7 +11,7 @@ Initialize a new project knowledge base. Formal writes require explicit invocati
 
 Read `../../references/执行状态机.md`, `../../references/初始化协议.md`, `../../references/知识采集与确认.md`, and `../../references/宿主执行与运行时探测.md` before writing.
 
-Follow `inspect -> propose -> await_confirmation -> apply -> validate -> report`. Obtain the user's 显式确认 for the exact Proposal revision before applying it. Derive the default target as `doc-<项目目录名>`. If the 目标已存在, stop and direct the user to `$context-atlas-add`, `$context-atlas-revise`, or `$context-atlas-retire` according to intent; never overwrite or reinitialize it.
+Follow `inspect -> propose -> await_confirmation -> apply -> validate -> report`. Obtain the user's 显式确认 for the exact Proposal revision before applying it. Derive the default target as `doc-<项目目录名>`. Discover current `doc-*` candidates before proposing: if exactly one current knowledge base exists, route to maintenance; if multiple candidates exist, stop and ask the user to identify the current authority. Never overwrite, merge, reinitialize, or create a second current knowledge base.
 
 Inspect the project root README and existing product documents, dependency/build manifests, source modules, API or message entry points, database models and migrations, tests, CI/release configuration, and existing ADRs. Route observations into the Proposal groups `goals`, `boundaries_in`, `boundaries_out`, `technology_stacks`, `terms`, `capabilities`, `features`, `modules`, `interfaces`, `databases`, `external_dependencies`, `tests`, and `adrs`. An existing-code project must include every supported observation that can be precisely sourced; an empty project must use empty arrays and must not invent placeholder facts.
 

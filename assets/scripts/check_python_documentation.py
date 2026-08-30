@@ -13,7 +13,10 @@ from typing import Iterable, Sequence
 
 
 EXCLUDED_PARTS = frozenset(
-    {".git", ".worktrees", "assets", "examples", "build", "__pycache__", ".test-probe", ".test-run", ".test-tmp"}
+    {
+        ".git", ".worktrees", ".codex", ".agents", ".claude", ".qoder",
+        "assets", "examples", "build", "__pycache__", ".test-probe", ".test-run", ".test-tmp",
+    }
 )
 CHINESE_RE = re.compile(r"[\u4e00-\u9fff]")
 LOGIC_WORDS = (

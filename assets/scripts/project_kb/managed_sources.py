@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 import hashlib
 import json
 import mimetypes
@@ -152,7 +152,7 @@ def _card(item: SourceImportItem, imported_at: datetime) -> str:
         "type: managed_source\n"
         f"title: {_safe_name(Path(item.source_path).name)}\n"
         "status: approved\n"
-        "version: 1.0.0\n"
+        "content_revision: 1\n"
         f"original_reference: {item.source_path}\n"
         f"managed_path: {item.managed_path}\n"
         f"sha256: {item.sha256}\n"
@@ -184,7 +184,7 @@ def apply_source_import(
     proposal = build_source_import_proposal(root)
     if proposal_revision != proposal.proposal_revision or confirmed_revision != proposal.proposal_revision:
         raise PermissionError("confirmed revision does not match current source import proposal")
-    now = imported_at or datetime.now(UTC)
+    now = imported_at or datetime.now(timezone.utc)
     source_root = root / "05-知识治理" / "来源资料"
     source_root.mkdir(parents=True, exist_ok=True)
     staging = source_root / f".importing-{uuid.uuid4().hex[:8]}"

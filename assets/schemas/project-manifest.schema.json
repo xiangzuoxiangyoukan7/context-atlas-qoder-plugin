@@ -1,13 +1,11 @@
 {
-  "required": ["protocol_version", "schema_version", "project_id", "project_name", "knowledge_base_name", "project_version", "format_version", "revision"],
+  "required": ["project_id", "project_name", "knowledge_base_name", "format_version", "knowledge_revision", "created_by"],
   "patterns": {
-    "protocol_version": "\\d+\\.\\d+",
-    "schema_version": "\\d+\\.\\d+",
     "project_id": "[a-zA-Z0-9][a-zA-Z0-9_-]*",
     "knowledge_base_name": "doc-[a-zA-Z0-9][a-zA-Z0-9_-]*",
     "project_version": "\\d+\\.\\d+\\.\\d+",
-    "format_version": "3",
-    "revision": "\\d+",
+    "format_version": "8",
+    "knowledge_revision": "\\d+",
     "workspace_profile": "standard|obsidian"
   },
   "unique_lists": []

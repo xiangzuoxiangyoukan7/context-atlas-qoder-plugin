@@ -1,6 +1,6 @@
 ---
 name: context-atlas-upgrade
-description: Upgrade an existing self-contained Context Atlas project knowledge base to a supported knowledge format and structure. Use when the user explicitly invokes context-atlas-upgrade or asks to migrate an old doc-* knowledge base, make it compatible with the installed plugin, or adopt the current Context Atlas format. Do not use it to add or revise business knowledge.
+description: Upgrade one existing Context Atlas knowledge base to a supported representation and format. Use for compatibility migration only; never add, revise, retire, approve, or reinterpret project knowledge.
 ---
 
 # Context Atlas Upgrade

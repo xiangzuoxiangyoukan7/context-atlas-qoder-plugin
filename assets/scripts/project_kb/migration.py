@@ -158,16 +158,14 @@ def _revision(
     return "migration-" + hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:12]
 
 
-def _format_seven_creations(root: Path) -> tuple[MigrationCreation, ...]:
-    """从随插件发布的核心模板生成格式七新增目录及其可达模板。"""
+def _current_format_creations(root: Path) -> tuple[MigrationCreation, ...]:
+    """从随插件发布的核心模板补齐当前格式所需目录及其可达模板。"""
 
     template_root = Path(__file__).resolve().parents[2] / "templates" / "core" / "doc-project"
     relatives = (
         Path("03-变更与证据/变更/README.md"),
         Path("03-变更与证据/变更/TEMPLATE.md"),
         Path("03-变更与证据/变更/Delta/TEMPLATE.md"),
-        Path("03-变更与证据/验收契约/README.md"),
-        Path("03-变更与证据/验收契约/TEMPLATE.md"),
     )
     creations: list[MigrationCreation] = []
     for relative in relatives:
@@ -190,8 +188,8 @@ def _asset_source_root() -> Path:
     raise FileNotFoundError("cannot locate plugin asset manifest")
 
 
-def _format_seven_assets(root: Path) -> tuple[MigrationAsset, ...]:
-    """为格式七提案枚举需要写入 `.project-kb` 的全部运行资产。"""
+def _current_format_assets(root: Path) -> tuple[MigrationAsset, ...]:
+    """为当前格式提案枚举需要写入 `.project-kb` 的全部运行资产。"""
 
     source_root = _asset_source_root()
     manifest_path = (
@@ -428,8 +426,8 @@ def build_migration_proposal(
     ordered_unresolved = tuple(
         sorted(unresolved, key=lambda item: (str(item.path), item.source_id))
     )
-    creations = _format_seven_creations(resolved_root)
-    assets = _format_seven_assets(resolved_root)
+    creations = _current_format_creations(resolved_root)
+    assets = _current_format_assets(resolved_root)
     return MigrationProposal(
         proposal_revision=_revision(
             result.format_version,
@@ -491,18 +489,48 @@ def _add_supported_by(content: str, links: tuple[str, ...]) -> str:
 
 
 def _set_format_version(content: str, target_version: int) -> str:
-    """更新或补充内部格式版本，同时保持项目业务版本原值。"""
+    """升级根清单版本模型，同时保持项目业务版本原值。"""
 
     lines = content.splitlines(keepends=True)
-    for index, line in enumerate(lines):
+    normalized: list[str] = []
+    has_format = False
+    has_revision = False
+    has_created_by = any(line.startswith("created_by:") for line in lines)
+    for line in lines:
+        if line.startswith(("protocol_version:", "schema_version:")):
+            continue
         if line.startswith("format_version:"):
-            lines[index] = f"format_version: {target_version}\n"
-            return "".join(lines)
+            normalized.append(f"format_version: {target_version}\n")
+            has_format = True
+            continue
+        if line.startswith("revision:"):
+            normalized.append("knowledge_revision:" + line.split(":", maxsplit=1)[1])
+            has_revision = True
+            continue
+        if line.startswith("knowledge_revision:"):
+            normalized.append(line)
+            has_revision = True
+            continue
+        normalized.append(line)
+    lines = normalized
     insertion = next(
         (index + 1 for index, line in enumerate(lines) if line.startswith("project_version:")),
         len(lines),
     )
-    lines.insert(insertion, f"format_version: {target_version}\n")
+    if not has_format:
+        lines.insert(insertion, f"format_version: {target_version}\n")
+        insertion += 1
+    if not has_revision:
+        lines.insert(insertion, "knowledge_revision: 1\n")
+    if not has_created_by:
+        authority_index = next(
+            (index for index, line in enumerate(lines) if line.startswith("authority:")),
+            len(lines),
+        )
+        lines[authority_index:authority_index] = [
+            "created_by:\n",
+            "  product: context-atlas\n",
+        ]
     return "".join(lines)
 
 

@@ -24,40 +24,55 @@ class CompatibilityResult:
     status: str
     write_blocked: bool
     conversion_available: bool
-    creates_format_version: int
+    created_format_version: int
+
+    @property
+    def creates_format_version(self) -> int:
+        """兼容旧调用方；新代码应读取 created_format_version。"""
+
+        return self.created_format_version
 
 
 @dataclass(frozen=True)
 class CompatibilityPolicy:
-    """保存插件版本、可读格式、新建格式和单向转换声明。"""
+    """保存兼容清单结构、可读格式、新建格式和单向转换声明。"""
 
-    plugin_version: str
-    reads_format_versions: frozenset[int]
-    creates_format_version: int
+    manifest_version: int
+    supported_format_versions: frozenset[int]
+    created_format_version: int
     conversions: tuple[FormatConversion, ...]
+
+    @property
+    def reads_format_versions(self) -> frozenset[int]:
+        """兼容旧调用方；新代码应读取 supported_format_versions。"""
+
+        return self.supported_format_versions
+
+    @property
+    def creates_format_version(self) -> int:
+        """兼容旧调用方；新代码应读取 created_format_version。"""
+
+        return self.created_format_version
 
     @classmethod
     def load(cls, path: Path) -> CompatibilityPolicy:
         """加载兼容声明并拒绝无法执行或相互矛盾的转换范围。"""
 
         payload = json.loads(path.resolve().read_text(encoding="utf-8"))
-        if not isinstance(payload, dict) or payload.get("version") != 1:
-            raise ValueError("compatibility version must be 1")
-        plugin_version = payload.get("plugin_version")
-        raw_reads = payload.get("reads_format_versions")
-        creates = payload.get("creates_format_version")
+        if not isinstance(payload, dict) or payload.get("manifest_version") != 1:
+            raise ValueError("compatibility manifest_version must be 1")
+        raw_reads = payload.get("supported_format_versions")
+        creates = payload.get("created_format_version")
         raw_conversions = payload.get("conversions")
-        if not isinstance(plugin_version, str) or not plugin_version:
-            raise ValueError("plugin_version is required")
         if (
             not isinstance(raw_reads, list)
             or not raw_reads
             or any(not isinstance(item, int) or item < 1 for item in raw_reads)
             or len(raw_reads) != len(set(raw_reads))
         ):
-            raise ValueError("reads_format_versions must contain unique positive integers")
+            raise ValueError("supported_format_versions must contain unique positive integers")
         if not isinstance(creates, int) or creates < 1 or creates not in raw_reads:
-            raise ValueError("creates_format_version must be readable")
+            raise ValueError("created_format_version must be supported")
         if not isinstance(raw_conversions, list):
             raise ValueError("conversions must be a list")
         conversions: list[FormatConversion] = []
@@ -79,9 +94,9 @@ class CompatibilityPolicy:
                 raise ValueError("invalid conversion declaration")
             conversions.append(FormatConversion(source, target, identifier))
         return cls(
-            plugin_version=plugin_version,
-            reads_format_versions=frozenset(raw_reads),
-            creates_format_version=creates,
+            manifest_version=1,
+            supported_format_versions=frozenset(raw_reads),
+            created_format_version=creates,
             conversions=tuple(conversions),
         )
 

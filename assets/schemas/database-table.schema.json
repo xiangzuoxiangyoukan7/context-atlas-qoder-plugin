@@ -1,5 +1,5 @@
 {
-  "required": ["id", "type", "title", "status", "version", "physical_name", "owner", "sensitivity", "sources", "ddl_sources", "rel_belongs_to", "last_updated"],
+  "required": ["id", "type", "title", "status", "physical_name", "owner", "sensitivity", "sources", "ddl_sources", "rel_belongs_to", "last_updated"],
   "enums": {
     "type": ["database_table"],
     "status": ["missing", "proposed", "approved", "conflicted", "stale", "superseded", "archived"],
@@ -8,6 +8,7 @@
   "patterns": {
     "id": "TABLE-[A-Z0-9-]+",
     "version": "\\d+\\.\\d+\\.\\d+",
+    "content_revision": "\\d+",
     "last_updated": "\\d{4}-\\d{2}-\\d{2}"
   },
   "non_empty_lists": ["sources", "ddl_sources", "rel_belongs_to"],

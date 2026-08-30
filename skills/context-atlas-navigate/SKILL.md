@@ -1,11 +1,13 @@
 ---
 name: context-atlas-navigate
-description: Browse a Context Atlas knowledge-base directory tree, query direct outgoing and incoming neighbors of a knowledge node, or inspect a bounded multi-hop or complete relationship graph. Use when an Agent needs to discover available requirements, features, interfaces, databases, or other knowledge and progressively load only relevant files.
+description: Read an existing Context Atlas knowledge base progressively through directory, neighbor, or bounded graph queries. Use to locate relevant project knowledge, not to assess readiness, health, or correctness.
 ---
 
 # Context Atlas Navigate
 
 Perform read-only, progressive knowledge navigation. Do not create a Proposal or modify the knowledge base.
+
+Resolve the project root and exactly one current `doc-*` knowledge base first. If none exists, route to `$context-atlas-init`; if multiple candidates exist, ask the user to identify the current authority; if its format is unsupported, route to `$context-atlas-upgrade`. Make zero writes in every case.
 
 Choose the smallest operation that answers the question:
 

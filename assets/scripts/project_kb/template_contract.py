@@ -55,8 +55,6 @@ def required_template_paths() -> Sequence[Path]:
             "03-变更与证据/README.md",
             "03-变更与证据/当前变更.md",
             "03-变更与证据/验收矩阵.md",
-            "03-变更与证据/验收契约/README.md",
-            "03-变更与证据/验收契约/TEMPLATE.md",
             "03-变更与证据/变更/README.md",
             "03-变更与证据/变更/TEMPLATE.md",
             "03-变更与证据/变更/Delta/TEMPLATE.md",

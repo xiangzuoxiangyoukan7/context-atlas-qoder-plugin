@@ -3,7 +3,7 @@ id: TABLE-DOMAIN-NAME
 type: database_table
 title: 数据表名称
 status: proposed
-version: 1.0.0
+content_revision: 1
 physical_name: table_name
 owner: missing
 sensitivity: missing
