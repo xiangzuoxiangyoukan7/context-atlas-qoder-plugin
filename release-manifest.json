@@ -1,10 +1,10 @@
 {
   "plugin": "context-atlas",
   "platform": "qoder",
-  "version": "0.13.1",
+  "version": "0.13.2",
   "files": {
     ".qoder-plugin/marketplace.json": "d6fc314cf3fac2be84b09eb977b7826e53f186eb445a59c1f394d79f71a57dab",
-    ".qoder-plugin/plugin.json": "56518a9ee7703c63a9ffc09e0f2ed77817cf772b820d705c4bb14961d73c77a3",
+    ".qoder-plugin/plugin.json": "0eb894a07a19029713b55d4b751f2ffa53e0181fc0bc1e620379c2cd9d773d7d",
     "assets/compatibility.json": "9c9c649cc8ba3a3f9689cb755b329b805756c3db896be19b536edda734d66685",
     "assets/manifest.json": "c03d10f761231c688c837b2dee3240401a35e0bedbb0e4b9ec87973c9c2ccab8",
     "assets/operations/archive.json": "7fdfcd1becad2c5f4d139e0a33c0c81b5a501e81db3b445761bb83403ee9bb0e",
@@ -17,7 +17,7 @@
     "assets/operations/release-archive.json": "15270f20ada295ef9624156464d195e7910302ccd97b19d34c47a30a9925c6ff",
     "assets/operations/update.json": "51626acfc3f89726d2f1dcedbafb8bfb42f472008b2cc0060e7f1881563ed807",
     "assets/operations/validate.json": "80e7bc2dbd191510d93373a98eea1819be84f658afc7ef852651b4bb0e0f520d",
-    "assets/references/规格审查与SDD适配.md": "60c675684ddcbda02799660e8cc0dfc9ac464e86b4889e062a37c35569d3701a",
+    "assets/references/规格审查与SDD适配.md": "78de93a46cfeba3693e21de76b512b8b8a6b8462204cce501659f44ad1e47836",
     "assets/rules/catalog.json": "f18a8a29148793ef29c56dc245175ce94a5cbdbfa9899eb5f22e4e5d3d0e25bf",
     "assets/rules/README.md": "ad960e71348d749e34a044dbb8879ab2d356de3f1172933b81b9105d83426964",
     "assets/rules/知识治理规则.md": "006a32450f8f6c660a13567b5f9b2c31727a47d5de43d48a91f81eae22226dec",
@@ -151,10 +151,10 @@
     "references/单来源摄取与路由.md": "1129721b6d1c611e7aa33025ce03ee19f59803182a32d5da9c0bbb1c859cff0a",
     "references/宿主执行与运行时探测.md": "54c85a8acbafe9f3aa9afe8df17fdca16377ce0f3081426b8570b88021dc0187",
     "references/执行状态机.md": "0f18032a864442f9dc9dd0fa0750d47978a9a1160e3dfff85b2cb2ed0b6ebb57",
-    "references/数据库知识.md": "d58dcc62cc6f9b7a1be49d743b36995388b58ccfaf847cba81dfa8551d1469df",
+    "references/数据库知识.md": "164977625d444deb0c23b5e952d1cdd2f79a98acf2a25cafb964782dcff9f083",
     "references/更新冲突与归档.md": "e1f3ad9743da78b74bb6ee9a20f80976ef3d47931c975dff994603d88a5c03ea",
     "references/知识采集与确认.md": "8bf41ba2a120322d8e2321f0d2eb592c0471f7f664671328ff6c8dd84bbae306",
-    "references/规格审查与SDD适配.md": "60c675684ddcbda02799660e8cc0dfc9ac464e86b4889e062a37c35569d3701a",
+    "references/规格审查与SDD适配.md": "78de93a46cfeba3693e21de76b512b8b8a6b8462204cce501659f44ad1e47836",
     "references/身份与主动采集.md": "948f6702f7ba11c914ea408225ea489ddc0cbfbdf8576f0dd78f23beab18efd8",
     "references/验证与结果报告.md": "f57058fcd37babb5090e51e7ec0344dbb409cda29bd1b542d05240361a364cba",
     "skills/context-atlas-add/agents/openai.yaml": "37ef58afca5f917654b17e52b3d582cc39e987f05b1d5d33ce22a9944714f84d",
@@ -174,6 +174,6 @@
     "skills/context-atlas-upgrade/agents/openai.yaml": "96cd83d29b40d13d82f1f1736a6ffcc12755a783f86042774f37672b68441cfa",
     "skills/context-atlas-upgrade/SKILL.md": "c9fa2309e9fad7360dcf5cd57e669946abd71436b503acf1ba61c56e31b91248",
     "skills/context-atlas-work/agents/openai.yaml": "9b214e0ff90c5349f617e50e50c13a1a950287fe6aedbb688a9ebca5156efe97",
-    "skills/context-atlas-work/SKILL.md": "90848e8cf897fbae45d3e85629d0afabfb7969034c800ca324e0f9a7ab74928e"
+    "skills/context-atlas-work/SKILL.md": "02041abaf38122e1b9d90426c41a6df303b2a3fe9e6aac61e4dea0d2255a9304"
   }
 }

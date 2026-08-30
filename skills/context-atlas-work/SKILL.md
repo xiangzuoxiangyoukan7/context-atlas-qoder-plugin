@@ -17,7 +17,7 @@ Read `../../references/执行状态机.md`, `../../references/知识采集与确
 2. Detect the project root and exactly one current `doc-*` knowledge base. If none exists, explain that initialization is available; do not initialize implicitly. If more than one candidate exists, stop and ask the user to identify the current authority. If the format is unsupported, route to upgrade and keep zero formal writes.
 3. Start read-only. Use the bundled executor to discover the smallest relevant knowledge area, then query direct neighbors or a bounded graph only when needed. Read the located requirements, features and their embedded acceptance scenarios, modules, concrete interfaces, databases, ADRs, changes, legacy acceptance contracts, and evidence that materially constrain the task.
 4. Classify the request as one or more of: new capability, change to existing behavior, defect investigation, refactor, retirement, or implementation-completion reconciliation. This classification selects knowledge operations; it never decides whether development may execute.
-5. Review readiness. Ask only questions whose answers materially change scope, public behavior, failure behavior, compatibility, security, data, operations, or acceptance. Present concrete choices when the repository cannot answer them.
+5. Review readiness. When the user has supplied a usage scenario and the repository contains enough constraints, synthesize the smallest usable recommended solution before asking questions. Mark derived details as `ai_inference` and `proposed`, cite the constraints behind them, and never treat the prohibition on inventing approved facts as a reason to return only missing fields. Ask only questions whose answers materially change scope, public behavior, failure behavior, compatibility, security, data precision or capacity, operations, lifecycle, or acceptance. When the repository cannot determine one safe choice, present two or three concrete choices, their impacts, and a recommended option.
 
 ## Development path choice
 
@@ -51,5 +51,7 @@ Keep the conversation task-oriented. Report:
 - affected modules, interfaces, databases, dependencies, and acceptance items;
 - the selected development path and knowledge-write state;
 - the next concrete development action.
+
+For an incomplete design request, include the recommended candidate solution, its evidence and inference boundary, alternatives with impacts when needed, and only the material decisions that still require the user. For example, a table-creation scenario with known usage must receive proposed columns, SQL data types, nullability, defaults, value domains, indexes, and relations where relevant; do not merely report that a type is missing.
 
 Never expose secrets, treat archived knowledge as current authority, invent missing product decisions, or present a validator result as proof that the implementation or business outcome is correct.
