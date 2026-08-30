@@ -10,10 +10,10 @@ import mimetypes
 from pathlib import Path
 import re
 import shutil
-import uuid
 
 from .ingest_enhancements import SENSITIVE_ASSIGNMENT
 from .validator import ValidationConfig, validate
+from .temporary_workspace import operation_workspace
 
 
 MAX_MANAGED_SOURCE_BYTES = 20 * 1024 * 1024
@@ -185,55 +185,49 @@ def apply_source_import(
     if proposal_revision != proposal.proposal_revision or confirmed_revision != proposal.proposal_revision:
         raise PermissionError("confirmed revision does not match current source import proposal")
     now = imported_at or datetime.now(timezone.utc)
-    source_root = root / "05-知识治理" / "来源资料"
-    source_root.mkdir(parents=True, exist_ok=True)
-    staging = source_root / f".importing-{uuid.uuid4().hex[:8]}"
-    staging.mkdir()
     installed: list[Path] = []
     originals_to_delete: list[Path] = []
     results: list[dict[str, str]] = []
-    try:
-        for item in proposal.items:
-            original = root / item.source_path
-            if item.status == "blocked":
-                results.append({"source_path": item.source_path, "status": "blocked", "reason": item.blocked_reason or "blocked"})
-                continue
-            if item.status == "duplicate":
-                results.append({"source_path": item.source_path, "status": "duplicate", "source_id": item.source_id})
+    with operation_workspace(root.parent, "ingest") as staging:
+        try:
+            for item in proposal.items:
+                original = root / item.source_path
+                if item.status == "blocked":
+                    results.append({"source_path": item.source_path, "status": "blocked", "reason": item.blocked_reason or "blocked"})
+                    continue
+                if item.status == "duplicate":
+                    results.append({"source_path": item.source_path, "status": "duplicate", "source_id": item.source_id})
+                    originals_to_delete.append(original)
+                    continue
+                staged_file = staging / item.managed_path
+                staged_card = staging / item.card_path
+                staged_file.parent.mkdir(parents=True, exist_ok=True)
+                staged_card.parent.mkdir(parents=True, exist_ok=True)
+                shutil.copy2(original, staged_file)
+                if _digest(staged_file) != item.sha256:
+                    raise ValueError("staged source digest mismatch")
+                staged_card.write_text(_card(item, now), encoding="utf-8", newline="\n")
+                final_file = root / item.managed_path
+                final_card = root / item.card_path
+                if final_file.exists() or final_card.exists():
+                    raise FileExistsError("managed source target already exists")
+                final_file.parent.mkdir(parents=True, exist_ok=True)
+                shutil.move(str(staged_file), str(final_file))
+                shutil.move(str(staged_card), str(final_card))
+                installed.extend((final_file, final_card))
                 originals_to_delete.append(original)
-                continue
-            staged_file = staging / item.managed_path
-            staged_card = staging / item.card_path
-            staged_file.parent.mkdir(parents=True, exist_ok=True)
-            staged_card.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(original, staged_file)
-            if _digest(staged_file) != item.sha256:
-                raise ValueError("staged source digest mismatch")
-            staged_card.write_text(_card(item, now), encoding="utf-8", newline="\n")
-            final_file = root / item.managed_path
-            final_card = root / item.card_path
-            if final_file.exists() or final_card.exists():
-                raise FileExistsError("managed source target already exists")
-            final_file.parent.mkdir(parents=True, exist_ok=True)
-            shutil.move(str(staged_file), str(final_file))
-            shutil.move(str(staged_card), str(final_card))
-            installed.extend((final_file, final_card))
-            originals_to_delete.append(original)
-            results.append({"source_path": item.source_path, "status": "saved", "source_id": item.source_id, "managed_path": item.managed_path})
-        issues = validate(root, ValidationConfig(schema_root=root / ".project-kb" / "schemas"))
-        if issues:
-            raise ValueError("managed source target validation failed: " + ", ".join(issue.code for issue in issues))
-        for original in originals_to_delete:
-            original.unlink()
-        return SourceImportResult("managed_source_imported", proposal.proposal_revision, tuple(results), 0)
-    except Exception:
-        for path in reversed(installed):
-            if path.is_file():
-                path.unlink()
-        for parent in sorted({path.parent for path in installed}, key=lambda value: len(value.parts), reverse=True):
-            if parent.is_dir() and not any(parent.iterdir()):
-                parent.rmdir()
-        raise
-    finally:
-        if staging.exists():
-            shutil.rmtree(staging)
+                results.append({"source_path": item.source_path, "status": "saved", "source_id": item.source_id, "managed_path": item.managed_path})
+            issues = validate(root, ValidationConfig(schema_root=root / ".project-kb" / "schemas"))
+            if issues:
+                raise ValueError("managed source target validation failed: " + ", ".join(issue.code for issue in issues))
+            for original in originals_to_delete:
+                original.unlink()
+            return SourceImportResult("managed_source_imported", proposal.proposal_revision, tuple(results), 0)
+        except Exception:
+            for path in reversed(installed):
+                if path.is_file():
+                    path.unlink()
+            for parent in sorted({path.parent for path in installed}, key=lambda value: len(value.parts), reverse=True):
+                if parent.is_dir() and not any(parent.iterdir()):
+                    parent.rmdir()
+            raise

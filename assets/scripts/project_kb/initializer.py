@@ -7,8 +7,8 @@ from pathlib import Path
 import re
 import json
 import shutil
-import uuid
 from .validator import ValidationConfig, validate
+from .temporary_workspace import operation_workspace
 from .agent_entry import apply_entry
 
 
@@ -291,63 +291,55 @@ def initialize_from_assets(
     if not template.is_dir() or not schema_root.is_dir():
         raise ValueError("Skill assets are incomplete")
 
-    # 所有操作暂存都收敛在固定目录的独立子目录中，避免项目根目录散落随机目录。
+    # 所有暂存都收敛在项目根固定临时目录的操作子目录中。
     # 暂存根与最终目标位于同一文件系统，验证后仍可原子改名。
-    temporary_root = project_root / ".context-atlas-tmp"
-    if temporary_root.exists() and (temporary_root.is_symlink() or not temporary_root.is_dir()):
-        raise ValueError("Context Atlas temporary root must be a regular directory")
-    temporary_root.mkdir(exist_ok=True)
-    operation_root = temporary_root / f"initialize-{uuid.uuid4().hex[:8]}"
-    operation_root.mkdir()
-    staging = operation_root / target.name
-    staging.mkdir()
-    try:
-        shutil.copytree(template, staging, dirs_exist_ok=True)
-        _replace_markers(
-            staging,
-            {
-                "{{PROJECT_ID}}": name,
-                "{{PROJECT_NAME}}": project_display_name or name,
-                "{{KNOWLEDGE_BASE_NAME}}": target.name,
-                "{{WORKSPACE_PROFILE}}": workspace_profile,
-                "{{INITIALIZED_AT}}": initialized_at or date.today().isoformat(),
-            },
-        )
-        if proposal is not None:
-            _render_confirmed_content(staging, proposal)
-        if workspace_profile == "obsidian":
-            _materialize_obsidian_profile(staging)
-        shutil.copytree(assets_root / "scripts", staging / ".project-kb" / "scripts")
-        shutil.copytree(schema_root, staging / ".project-kb" / "schemas")
-        shutil.copy2(
-            assets_root / "compatibility.json",
-            staging / ".project-kb" / "compatibility.json",
-        )
-        issues = validate(staging, ValidationConfig(schema_root=staging / ".project-kb" / "schemas"))
-        if issues:
-            codes = ", ".join(issue.code for issue in issues)
-            raise ValueError(f"materialized knowledge base is invalid: {codes}")
-        if target.exists():
-            raise FileExistsError(f"knowledge-base target appeared during initialization: {target}")
-        staging.replace(target)
-        if agent_entry is not None:
-            entry_path = project_root / agent_entry["filename"]
-            original_entry = entry_path.read_bytes() if entry_path.exists() else None
-            try:
-                apply_entry(project_root, agent_entry["host"], agent_entry["filename"], target.name)
-            except Exception:
-                if original_entry is None:
-                    if entry_path.exists():
-                        entry_path.unlink()
-                else:
-                    entry_path.write_bytes(original_entry)
-                shutil.rmtree(target)
-                raise
-        return target
-    except Exception:
-        if staging.exists():
-            shutil.rmtree(staging)
-        raise
-    finally:
-        if operation_root.exists():
-            shutil.rmtree(operation_root)
+    with operation_workspace(project_root, "initialize") as operation_root:
+        staging = operation_root / target.name
+        staging.mkdir()
+        try:
+            shutil.copytree(template, staging, dirs_exist_ok=True)
+            _replace_markers(
+                staging,
+                {
+                    "{{PROJECT_ID}}": name,
+                    "{{PROJECT_NAME}}": project_display_name or name,
+                    "{{KNOWLEDGE_BASE_NAME}}": target.name,
+                    "{{WORKSPACE_PROFILE}}": workspace_profile,
+                    "{{INITIALIZED_AT}}": initialized_at or date.today().isoformat(),
+                },
+            )
+            if proposal is not None:
+                _render_confirmed_content(staging, proposal)
+            if workspace_profile == "obsidian":
+                _materialize_obsidian_profile(staging)
+            shutil.copytree(assets_root / "scripts", staging / ".project-kb" / "scripts")
+            shutil.copytree(schema_root, staging / ".project-kb" / "schemas")
+            shutil.copy2(
+                assets_root / "compatibility.json",
+                staging / ".project-kb" / "compatibility.json",
+            )
+            issues = validate(staging, ValidationConfig(schema_root=staging / ".project-kb" / "schemas"))
+            if issues:
+                codes = ", ".join(issue.code for issue in issues)
+                raise ValueError(f"materialized knowledge base is invalid: {codes}")
+            if target.exists():
+                raise FileExistsError(f"knowledge-base target appeared during initialization: {target}")
+            staging.replace(target)
+            if agent_entry is not None:
+                entry_path = project_root / agent_entry["filename"]
+                original_entry = entry_path.read_bytes() if entry_path.exists() else None
+                try:
+                    apply_entry(project_root, agent_entry["host"], agent_entry["filename"], target.name)
+                except Exception:
+                    if original_entry is None:
+                        if entry_path.exists():
+                            entry_path.unlink()
+                    else:
+                        entry_path.write_bytes(original_entry)
+                    shutil.rmtree(target)
+                    raise
+            return target
+        except Exception:
+            if staging.exists():
+                shutil.rmtree(staging)
+            raise

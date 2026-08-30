@@ -85,6 +85,7 @@
     "scripts/project_kb/specification.py",
     "scripts/project_kb/structure.py",
     "scripts/project_kb/template_contract.py",
+    "scripts/project_kb/temporary_workspace.py",
     "scripts/project_kb/traceability.py",
     "scripts/project_kb/updater.py",
     "scripts/project_kb/validator.py",
