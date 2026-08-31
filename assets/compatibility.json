@@ -1,47 +1,52 @@
 {
   "manifest_version": 1,
-  "supported_format_versions": [1, 2, 3, 4, 5, 6, 7, 8, 9],
-  "created_format_version": 9,
+  "supported_format_versions": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+  "created_format_version": 10,
   "conversions": [
     {
       "from": 1,
-      "to": 9,
+      "to": 10,
       "id": "embedded-sources-and-knowledge-governance"
     },
     {
       "from": 2,
-      "to": 9,
+      "to": 10,
       "id": "knowledge-governance-layout-and-embedded-sources"
     },
     {
       "from": 3,
-      "to": 9,
+      "to": 10,
       "id": "embedded-sources"
     },
     {
       "from": 4,
-      "to": 9,
+      "to": 10,
       "id": "typed-knowledge-and-simplified-contract-layout"
     },
     {
       "from": 5,
-      "to": 9,
+      "to": 10,
       "id": "changes-and-evidence-without-task-packages"
     },
     {
       "from": 6,
-      "to": 9,
+      "to": 10,
       "id": "specification-readiness-and-change-workspaces"
     },
     {
       "from": 7,
-      "to": 9,
+      "to": 10,
       "id": "unified-version-model-and-knowledge-granularity"
     },
     {
       "from": 8,
-      "to": 9,
+      "to": 10,
       "id": "embedded-acceptance-and-concrete-interfaces"
+    },
+    {
+      "from": 9,
+      "to": 10,
+      "id": "feature-integrated-design-and-acceptance"
     }
   ]
 }

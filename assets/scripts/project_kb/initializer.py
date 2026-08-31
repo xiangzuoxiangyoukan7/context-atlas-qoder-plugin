@@ -19,7 +19,6 @@ OBSIDIAN_COLOR_GROUPS = (
     ("[type:feature]", 4360181),
     ("[type:module]", 39423),
     ("[type:interface]", 16753920),
-    ("[type:contract OR independent_contract]", 10181046),
     ("[type:database_table OR database_unit OR database_namespace OR data_source]", 3447003),
     ("[type:data_asset]", 16766720),
     ("[type:adr]", 16744448),

@@ -7,8 +7,8 @@
 ## 审查模式
 
 - `requirement`：利益相关方、问题价值、范围、业务规则、成功指标、依赖、假设和未知项。
-- `feature`：参与者、前置条件、规范性行为、输入输出、状态、失败边界、安全、非功能约束和验收场景。
-- `design`：上下文、目标与非目标、关键决策、替代方案、风险、迁移、回滚和仍可延后的未知项。
+- `feature`：参与者、前置条件、规范性行为、完整功能设计、输入输出、状态、失败边界、安全、非功能约束和验收场景。
+- `design`：审查功能内设计或变更工作区的临时 Design，覆盖上下文、目标与非目标、关键决策、替代方案、风险、迁移、回滚和仍可延后的未知项；稳定功能设计必须回归功能文档。
 - `change`：单一意图、Delta 类型、目标基线、影响、迁移和验收计划。
 - `implementation_readiness`：规格已就绪、设计约束已解决、外部任务可追溯并包含验证方式。
 - `acceptance_readiness`：功能内嵌验收场景已覆盖规范行为，环境、版本和证据位置可登记。
@@ -23,7 +23,7 @@
 
 ## 外部 SDD 映射
 
-OpenSpec 的 Proposal、Spec Delta、Design 和 Tasks 分别映射为变更候选、规格增量、变更设计和外部任务引用。Spec Kit 的 spec、plan、contracts、data-model、quickstart、tasks 和 checklists 分别映射为功能候选、设计、接口或数据候选、验收候选、外部任务和审查证据。
+OpenSpec 的 Proposal、Spec Delta、Design 和 Tasks 分别映射为变更候选、规格增量、功能设计候选和外部任务引用。Spec Kit 的 spec、plan、contracts、data-model、quickstart、tasks 和 checklists 分别映射为功能候选、功能设计候选、具体接口或数据候选、验收候选、外部任务和审查证据。外部 Design 可以参与一次变更，但被接受的稳定内容必须合并进对应功能，不建立第二份当前设计权威。
 
 ```powershell
 py .project-kb/scripts/inspect_sdd_workspace.py openspec <工作区根>

@@ -32,7 +32,6 @@ TYPE_DIRECTORIES = {
     "knowledge_proposal": "03-变更与证据",
     "module": "02-架构与契约/模块",
     "interface": "02-架构与契约/接口",
-    "independent_contract": "02-架构与契约/独立契约",
 }
 LEGACY_FIXED = {
     "03-实施与验收",

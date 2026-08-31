@@ -92,16 +92,6 @@
       "impact_rules": {"breaking_change": "required", "removed": "required", "deprecated": "review_required", "formatting_only": "informational", "file_moved": "informational"}
     },
     {
-      "field": "rel_uses",
-      "name_zh": "复用该独立契约",
-      "source_prefixes": ["REQ", "F", "FEATURE", "MOD", "MODULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "TASK"],
-      "target_prefixes": ["CONTRACT"],
-      "direction": "forward_only",
-      "status": "active",
-      "default_impact": "review_required",
-      "impact_rules": {"breaking_change": "required", "removed": "required", "rule_changed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
-    },
-    {
       "field": "rel_exposes",
       "name_zh": "对外提供该契约",
       "source_prefixes": ["F", "FEATURE", "MOD", "MODULE"],
@@ -144,7 +134,7 @@
     {
       "field": "rel_verified_by",
       "name_zh": "由该验收项证明",
-      "source_prefixes": ["REQ", "F", "FEATURE", "RULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "CONTRACT"],
+      "source_prefixes": ["REQ", "F", "FEATURE", "RULE", "API", "RPC", "EVENT", "WEBHOOK", "FILE"],
       "target_prefixes": ["AC", "F", "KB"],
       "direction": "forward_only",
       "status": "active",
@@ -195,7 +185,7 @@
       "field": "rel_scenario_for",
       "name_zh": "验收该规范行为",
       "source_prefixes": ["AC"],
-      "target_prefixes": ["REQ", "F", "FEATURE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "CLI", "AGENT", "CONTRACT"],
+      "target_prefixes": ["REQ", "F", "FEATURE", "API", "RPC", "EVENT", "WEBHOOK", "FILE", "CLI", "AGENT"],
       "direction": "forward_only",
       "status": "active",
       "default_impact": "review_required",

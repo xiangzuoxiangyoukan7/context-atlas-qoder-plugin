@@ -350,6 +350,19 @@ def build_migration_proposal(
     }
     changes: list[MigrationChange] = []
     unresolved: list[MigrationUnresolved] = []
+    if result.creates_format_version >= 10:
+        for record in record_list:
+            legacy_type = record.metadata.get("type")
+            if legacy_type not in {"contract", "independent_contract", "acceptance_contract"}:
+                continue
+            identifier = str(record.metadata.get("id", record.path.stem))
+            unresolved.append(
+                MigrationUnresolved(
+                    record.path.resolve(),
+                    identifier,
+                    "遗留契约必须先通过知识维护 Proposal 归入需求、功能或具体技术对象",
+                )
+            )
     referenced_source_ids: set[str] = set()
     for record in record_list if result.format_version <= 3 else ():
         if record.metadata.get("type") == "source":

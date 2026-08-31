@@ -43,8 +43,6 @@ def required_template_paths() -> Sequence[Path]:
             "02-架构与契约/模块/TEMPLATE.md",
             "02-架构与契约/接口/README.md",
             "02-架构与契约/接口/TEMPLATE.md",
-            "02-架构与契约/独立契约/README.md",
-            "02-架构与契约/独立契约/TEMPLATE.md",
             "02-架构与契约/数据库/README.md",
             "02-架构与契约/数据库/数据源模板/TEMPLATE.md",
             "02-架构与契约/数据库/数据表模板/TEMPLATE.md",

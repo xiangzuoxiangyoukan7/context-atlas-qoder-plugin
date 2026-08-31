@@ -42,12 +42,7 @@ def validate_specifications(
         if isinstance(record.metadata.get("id"), str)
     }
     issues: list[Issue] = []
-    acceptance_ids = {
-        str(record.metadata.get("id"))
-        for record in materialized
-        if record.metadata.get("type") == "acceptance_contract"
-        and isinstance(record.metadata.get("id"), str)
-    }
+    acceptance_ids: set[str] = set()
     for record in materialized:
         if record.metadata.get("type") == "feature":
             acceptance_ids.update(_as_list(record.metadata.get("acceptance")))
@@ -82,8 +77,18 @@ def validate_specifications(
                 issues.append(
                     Issue("KB_SPEC_SCENARIO", record.path, "ready feature lacks a level-four acceptance scenario")
                 )
+            required_design_sections = ("## 功能设计", "### 设计概述", "### 异常、边界与降级", "### 技术对象与影响")
+            for heading in required_design_sections:
+                if heading not in record.body:
+                    issues.append(
+                        Issue("KB_SPEC_FEATURE_DESIGN", record.path, f"ready feature lacks design section: {heading}")
+                    )
+            if "### 处理流程" not in record.body and "### 输入、输出与状态变化" not in record.body:
+                issues.append(
+                    Issue("KB_SPEC_FEATURE_DESIGN", record.path, "ready feature requires process flow or state transition design")
+                )
             declared = set(_as_list(metadata.get("acceptance")))
-            headings = set(re.findall(r"^#### (?:场景|Scenario)\s+(AC-[A-Z0-9-]+)[：:]", record.body, re.MULTILINE))
+            headings = set(re.findall(r"^#### (?:场景|Scenario)\s+((?:AC-[A-Z0-9]+-[0-9]{3}|(?:F\d{2}|KB)-AC-\d{2}))[：:]", record.body, re.MULTILINE))
             if not declared:
                 issues.append(
                     Issue("KB_SPEC_COVERAGE", record.path, "ready feature requires declared embedded acceptance scenarios")
@@ -92,7 +97,7 @@ def validate_specifications(
                 issues.append(
                     Issue("KB_SPEC_SCENARIO_COVERAGE", record.path, "feature acceptance ids must exactly match embedded scenario headings")
                 )
-            sections = re.split(r"(?=^#### (?:场景|Scenario)\s+AC-[A-Z0-9-]+[：:])", record.body, flags=re.MULTILINE)[1:]
+            sections = re.split(r"(?=^#### (?:场景|Scenario)\s+(?:AC-[A-Z0-9]+-[0-9]{3}|(?:F\d{2}|KB)-AC-\d{2})[：:])", record.body, flags=re.MULTILINE)[1:]
             for section in sections:
                 if not all(marker in section for marker in ("GIVEN", "WHEN", "THEN")) or not re.search(r"验证方式|Verification", section):
                     issues.append(
@@ -113,14 +118,15 @@ def validate_specifications(
         if readiness == "ready" and kind == "feature" and relation_index is not None:
             identifier = metadata.get("id")
             implementation_relations = {
-                "rel_primary_module", "rel_participating_modules", "rel_uses", "rel_exposes"
+                "rel_primary_module", "rel_participating_modules", "rel_exposes",
+                "rel_calls", "rel_reads", "rel_writes", "rel_depends_on",
             }
             if not any(
                 edge.field in implementation_relations
                 for edge in relation_index.outgoing(str(identifier))
             ):
                 issues.append(
-                    Issue("KB_COVERAGE_IMPLEMENTATION", record.path, "ready feature lacks module or contract coverage")
+                    Issue("KB_COVERAGE_IMPLEMENTATION", record.path, "ready feature lacks module or technical-object coverage")
                 )
         if kind == "task":
             identifier = str(metadata.get("id", ""))
@@ -154,21 +160,9 @@ def validate_specifications(
                     Issue(
                         "KB_COVERAGE_TASK_ACCEPTANCE",
                         record.path,
-                        "external task is not linked to an embedded or legacy acceptance scenario",
+                        "external task is not linked to an embedded acceptance scenario",
                     )
                 )
-        if kind == "acceptance_contract":
-            subject = metadata.get("subject_id")
-            if not isinstance(subject, str) or subject not in ids:
-                issues.append(
-                    Issue("KB_SPEC_ACCEPTANCE_SUBJECT", record.path, f"unknown acceptance subject: {subject}")
-                )
-            for heading in ("## 前置条件", "## WHEN", "## THEN", "## 验证方式"):
-                if heading not in record.body:
-                    issues.append(
-                        Issue("KB_SPEC_ACCEPTANCE_SECTION", record.path, f"missing acceptance section: {heading}")
-                    )
-
         if kind == "interface":
             identifier = str(metadata.get("id", ""))
             title = str(metadata.get("title", ""))
