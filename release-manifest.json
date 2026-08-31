@@ -1,10 +1,10 @@
 {
   "plugin": "context-atlas",
   "platform": "qoder",
-  "version": "0.14.0",
+  "version": "0.14.1",
   "files": {
     ".qoder-plugin/marketplace.json": "d6fc314cf3fac2be84b09eb977b7826e53f186eb445a59c1f394d79f71a57dab",
-    ".qoder-plugin/plugin.json": "2198b548e7f90b68ec64ce4751b4b1f0c1836f8fe9bee95d158f1fdc54ff2201",
+    ".qoder-plugin/plugin.json": "6249f1e88a53a5587ff4646fa6216e5b708111d37b14179119331e7f5c4b5b2b",
     "assets/compatibility.json": "1e54d05512baed5e39deff113b61dc5a076ab236e67eb9d5c7814f740eccd448",
     "assets/manifest.json": "37fdccb038079e91dc597510024475af9285f1308ca48c4039805627f83da5ac",
     "assets/operations/archive.json": "7fdfcd1becad2c5f4d139e0a33c0c81b5a501e81db3b445761bb83403ee9bb0e",
@@ -52,7 +52,7 @@
     "assets/schemas/task.schema.json": "c3b7f0fdc49711b2e2dfe205136895513850785268bb4e89c5bca67a4d275a3d",
     "assets/schemas/字段说明.md": "1e424118fadc39a1e903f3ef77b05b96c98057e8512f2b3f4ecb3d23a9f906db",
     "assets/scripts/__init__.py": "9d24b78eaf469e5ae9c1d711b45ce505a670002145f41fcae10a642cb97e9249",
-    "assets/scripts/agent_kb_operation.py": "269f457f842f2e31769aa4babbba3a9ddeb3a03629a9a0ba0953abaab2818caa",
+    "assets/scripts/agent_kb_operation.py": "2ccbc5d2403dff8dd8d78ec75b86d515080a45ebaf11c991017422e7bff29627",
     "assets/scripts/analyze_knowledge_impact.py": "915447b166db82eb8384e5331c18b01771a0fa0989b62a656ce8be780e07568a",
     "assets/scripts/check_knowledge_base.py": "5a1adf71117c19ef8874dd930a45bc293eb75a4ff460475bf2d1b6b814805ea8",
     "assets/scripts/check_python_documentation.py": "eb92d58bbbcebdcf63b64427157e5352b57cbbad2a5cdb065d0c3b8173576088",
@@ -144,7 +144,7 @@
     "marketplace.json": "bcae884d2cc8198214e5d2f1efca012272b4a4d89ddb041532f24f1e8ad70775",
     "README.md": "dc9899f81d76a7a50c983f99a4bbd529116a957b3ad2422079b5198127c89316",
     "references/关系与影响分析.md": "ef59a4f14a688dca5ecd36f213acc806a325ca2a3661ce836f15b29e56ed82ee",
-    "references/兼容与迁移.md": "706af8b03de2fe0291971737cb31b7604fead162d3283b64be4668819ecb6fc2",
+    "references/兼容与迁移.md": "f0117be49ed0949c39c2c367aed3d00988ac7c0b0d47b44c7368214c86e0af2f",
     "references/初始化协议.md": "533db6214bc6d350445d4ea800825c89d5fb12fd28f720fbb72fdec908537136",
     "references/单来源摄取与路由.md": "1129721b6d1c611e7aa33025ce03ee19f59803182a32d5da9c0bbb1c859cff0a",
     "references/宿主执行与运行时探测.md": "54c85a8acbafe9f3aa9afe8df17fdca16377ce0f3081426b8570b88021dc0187",
@@ -170,7 +170,7 @@
     "skills/context-atlas-revise/agents/openai.yaml": "8c724ebb0700ccc8dd688f8d3bb2ea262c19db55a7f03b1c24c2a15596ee6b87",
     "skills/context-atlas-revise/SKILL.md": "f58a1b885c12fc80ff305dc5633ebcc8ac6a093d18d8de9ebbe93f4dc71c0123",
     "skills/context-atlas-upgrade/agents/openai.yaml": "96cd83d29b40d13d82f1f1736a6ffcc12755a783f86042774f37672b68441cfa",
-    "skills/context-atlas-upgrade/SKILL.md": "c9fa2309e9fad7360dcf5cd57e669946abd71436b503acf1ba61c56e31b91248",
+    "skills/context-atlas-upgrade/SKILL.md": "87e19914d0b4e696c5c6d7a8a7e04be9947f2bdab43ed2a6b33907ac353d3853",
     "skills/context-atlas-work/agents/openai.yaml": "9b214e0ff90c5349f617e50e50c13a1a950287fe6aedbb688a9ebca5156efe97",
     "skills/context-atlas-work/SKILL.md": "02041abaf38122e1b9d90426c41a6df303b2a3fe9e6aac61e4dea0d2255a9304"
   }
