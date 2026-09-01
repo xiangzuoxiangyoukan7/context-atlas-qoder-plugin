@@ -2,3 +2,5 @@ interface:
   display_name: "context-atlas-init"
   short_description: "初始化当前项目的 Context Atlas 知识库"
   default_prompt: "使用 $context-atlas-init 初始化当前项目知识库；如果我尚未选择工作区模式，先请我选择 standard 或 obsidian。"
+policy:
+  allow_implicit_invocation: false

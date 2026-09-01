@@ -7,23 +7,22 @@ from pathlib import Path
 import re
 import json
 import shutil
-import uuid
 from .validator import ValidationConfig, validate
+from .temporary_workspace import operation_workspace
 from .agent_entry import apply_entry
 
 
 MARKER_PATTERN = re.compile(r"{{[A-Z][A-Z0-9_]*}}")
 
 OBSIDIAN_COLOR_GROUPS = (
+    ("[type:knowledge_index]", 10027212),
     ("[type:requirement]", 14701138),
     ("[type:feature]", 4360181),
     ("[type:module]", 39423),
     ("[type:interface]", 16753920),
-    ("[type:contract OR independent_contract]", 10181046),
     ("[type:database_table OR database_unit OR database_namespace OR data_source]", 3447003),
     ("[type:data_asset]", 16766720),
     ("[type:adr]", 16744448),
-    ("[type:acceptance_contract]", 6737151),
     ("[type:specification_change OR specification_delta]", 10040012),
 )
 
@@ -107,6 +106,16 @@ def _knowledge_status(fact: dict[str, object]) -> str:
     return "approved" if fact.get("status") == "confirmed" else "proposed"
 
 
+def _interface_business_name(item: dict[str, object]) -> str:
+    """从已确认的具体接口观察生成可读且可移植的名称片段。"""
+
+    value = _cell(item["value"]).strip()
+    normalized = re.sub(r"[\\/:*?\"<>|{}]+", "-", value)
+    normalized = re.sub(r"\s+", "-", normalized).strip("-. ")
+    normalized = re.sub(r"-+", "-", normalized)
+    return normalized[:80] or "待确认用途"
+
+
 def _render_module(root: Path, item: dict[str, object]) -> None:
     """把模块观察写成可独立引用的模块契约。"""
 
@@ -116,32 +125,62 @@ def _render_module(root: Path, item: dict[str, object]) -> None:
     lines = [
         "---", f"id: {identifier}", "type: module", f"title: {identifier}",
         f"status: {_knowledge_status(item)}", f"paths: [{_cell(source['reference'])}]", "sources:",
-        *_embedded_source_lines(item), "rel_provides: []", "rel_calls: []", "rel_depends_on: []",
+        *_embedded_source_lines(item), "rel_classified_under:",
+        '  - "[[02-技术基线/模块/README|IDX-MODULES]]"',
+        "rel_provides: []", "rel_calls: []", "rel_depends_on: []",
         f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}", "",
         "## 职责", "", _cell(item["value"]), "", "## 明确不负责", "", "待确认。", "",
         "## 允许依赖与禁止依赖", "", "待确认。", "",
     ]
-    (root / "02-架构与契约" / "模块" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "模块" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _render_interface(root: Path, item: dict[str, object]) -> None:
     """把接口观察写成统一接口契约并按编号确定通信类型。"""
 
     identifier = _cell(item["id"])
+    business_name = _interface_business_name(item)
     source = item["source"]
     assert isinstance(source, dict)
     prefix = identifier.split("-", 1)[0]
     kinds = {"API": "http", "RPC": "rpc", "EVENT": "event", "WEBHOOK": "webhook", "FILE": "file"}
     lines = [
-        "---", f"id: {identifier}", "type: interface", f"title: {identifier}",
+        "---", f"id: {identifier}", "type: interface", f"title: {business_name}",
         f"status: {_knowledge_status(item)}", f"interface_kind: {kinds.get(prefix, 'function')}",
         "visibility: internal", "content_revision: 1", "api_version: v1", "sources:", *_embedded_source_lines(item),
+        "rel_classified_under:", '  - "[[02-技术基线/接口/README|IDX-INTERFACES]]"',
         "rel_reads: []", "rel_writes: []", "rel_depends_on: []", "rel_verified_by: []",
-        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}", "",
+        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}：{business_name}", "",
         "## 入口、输入与输出", "", _cell(item["value"]), "", "## 错误语义", "", "待确认。", "",
         "## 版本、兼容与敏感字段", "", "待确认。", "",
     ]
-    (root / "02-架构与契约" / "接口" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "接口" / f"{identifier}-{business_name}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def _render_observed_item(root: Path, item: dict[str, object], directory: str, index_id: str) -> None:
+    """把初始化观察写成单一事实文件，避免覆盖分类 README。"""
+
+    identifier = _cell(item["id"])
+    source = item["source"]
+    assert isinstance(source, dict)
+    title = _cell(item["value"])
+    filename = _interface_business_name(item)
+    status = _knowledge_status(item)
+    approval = [] if status != "approved" else [
+        "approved_by: project_owner",
+        f"approved_at: {str(source.get('confirmed_at', source['observed_at']))[:10]}",
+        "version: 1.0.0",
+    ]
+    lines = [
+        "---", f"id: {identifier}", "type: knowledge_item", f"title: {title}",
+        f"status: {status}", *approval, "sources:", *_embedded_source_lines(item),
+        "rel_classified_under:", f'  - "[[{directory}/README|{index_id}]]"',
+        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}：{title}", "",
+        "初始化只记录可定位观察；产品含义和设计理由仍需责任人确认。", "",
+    ]
+    target = root / directory / f"{identifier}-{filename}.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
@@ -150,7 +189,11 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     facts = proposal["facts"]
     assert isinstance(facts, dict)
 
-    overview = [f"# {_cell(proposal['project']['name'])} 项目概述", "", "## 项目定位", ""]
+    overview = [
+        "---", "id: OVERVIEW-PROJECT", "type: overview_document", "title: 项目概述",
+        "rel_classified_under:", '  - "[[00-项目总览/README|IDX-OVERVIEW]]"', "---", "",
+        f"# {_cell(proposal['project']['name'])} 项目概述", "", "## 项目定位", "",
+    ]
     goal_items = facts["goals"]
     assert isinstance(goal_items, list)
     if goal_items:
@@ -177,7 +220,11 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     overview.append("")
     (root / "00-项目总览" / "项目概述.md").write_text("\n".join(overview), encoding="utf-8", newline="\n")
 
-    technologies = ["# 系统架构", "", "## 技术基线", "", "| 技术 | 版本 | 使用目录或模块 | 项目用途 | 构建、测试与运行命令 | 配置位置 | 来源 | 状态 |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    technologies = [
+        "---", "id: ARCH-001", "type: architecture", "title: 系统架构",
+        "rel_classified_under:", '  - "[[02-技术基线/README|IDX-TECHNICAL-BASELINE]]"', "---", "",
+        "# 系统架构", "", "## 技术基线", "", "| 技术 | 版本 | 使用目录或模块 | 项目用途 | 构建、测试与运行命令 | 配置位置 | 来源 | 状态 |", "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
     stacks = facts["technology_stacks"]
     assert isinstance(stacks, list)
     technologies.extend(
@@ -186,7 +233,7 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     )
     technologies.append("")
     technologies.extend(["", "## 上下文与组件", "", "待确认。", ""])
-    (root / "02-架构与契约" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
 
     def render_table(relative: str, title: str, group: str, headers: tuple[str, ...]) -> None:
         """将一类仓库观察写入其唯一固定文档。"""
@@ -202,16 +249,23 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
         (root / relative).write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
     render_table("00-项目总览/术语表.md", "术语表", "terms", ("术语编号", "名称与含义", "来源", "状态"))
-    capability_items = [*facts["capabilities"], *facts["features"]]
-    facts["_routed_features"] = capability_items
-    render_table("01-功能基线/能力地图.md", "产品能力地图", "_routed_features", ("编号", "能力或功能", "来源", "状态"))
+    glossary = root / "00-项目总览" / "术语表.md"
+    glossary.write_text(
+        "---\nid: GLOSSARY\ntype: overview_document\ntitle: 术语表\nrel_classified_under:\n  - \"[[00-项目总览/README|IDX-OVERVIEW]]\"\n---\n" + glossary.read_text(encoding="utf-8"),
+        encoding="utf-8", newline="\n",
+    )
+    for item in [*facts["capabilities"], *facts["features"]]:
+        _render_observed_item(root, item, "01-功能基线/功能", "IDX-FEATURES")
     for module in facts["modules"]:
         _render_module(root, module)
     for interface in facts["interfaces"]:
         _render_interface(root, interface)
-    render_table("02-架构与契约/数据库/README.md", "数据库知识", "databases", ("数据库编号", "观察事实", "来源", "状态"))
-    render_table("02-架构与契约/外部依赖/README.md", "外部依赖", "external_dependencies", ("依赖编号", "依赖与用途", "来源", "状态"))
-    render_table("04-决策记录/README.md", "决策记录", "adrs", ("ADR 编号", "已有决策摘要", "来源", "状态"))
+    for item in facts["databases"]:
+        _render_observed_item(root, item, "02-技术基线/数据库", "IDX-DATABASE")
+    for item in facts["external_dependencies"]:
+        _render_observed_item(root, item, "02-技术基线/外部依赖", "IDX-DEPENDENCIES")
+    for item in facts["adrs"]:
+        _render_observed_item(root, item, "04-决策记录", "IDX-DECISIONS")
 
     test_items = facts["tests"]
     assert isinstance(test_items, list)
@@ -222,7 +276,7 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
             for item in test_items
         )
         technologies.append("")
-        (root / "02-架构与契约" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
+        (root / "02-技术基线" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
 
 
 def _safe_project_name(name: str) -> str:
@@ -281,63 +335,55 @@ def initialize_from_assets(
     if not template.is_dir() or not schema_root.is_dir():
         raise ValueError("Skill assets are incomplete")
 
-    # 所有操作暂存都收敛在固定目录的独立子目录中，避免项目根目录散落随机目录。
+    # 所有暂存都收敛在项目根固定临时目录的操作子目录中。
     # 暂存根与最终目标位于同一文件系统，验证后仍可原子改名。
-    temporary_root = project_root / ".context-atlas-tmp"
-    if temporary_root.exists() and (temporary_root.is_symlink() or not temporary_root.is_dir()):
-        raise ValueError("Context Atlas temporary root must be a regular directory")
-    temporary_root.mkdir(exist_ok=True)
-    operation_root = temporary_root / f"initialize-{uuid.uuid4().hex[:8]}"
-    operation_root.mkdir()
-    staging = operation_root / target.name
-    staging.mkdir()
-    try:
-        shutil.copytree(template, staging, dirs_exist_ok=True)
-        _replace_markers(
-            staging,
-            {
-                "{{PROJECT_ID}}": name,
-                "{{PROJECT_NAME}}": project_display_name or name,
-                "{{KNOWLEDGE_BASE_NAME}}": target.name,
-                "{{WORKSPACE_PROFILE}}": workspace_profile,
-                "{{INITIALIZED_AT}}": initialized_at or date.today().isoformat(),
-            },
-        )
-        if proposal is not None:
-            _render_confirmed_content(staging, proposal)
-        if workspace_profile == "obsidian":
-            _materialize_obsidian_profile(staging)
-        shutil.copytree(assets_root / "scripts", staging / ".project-kb" / "scripts")
-        shutil.copytree(schema_root, staging / ".project-kb" / "schemas")
-        shutil.copy2(
-            assets_root / "compatibility.json",
-            staging / ".project-kb" / "compatibility.json",
-        )
-        issues = validate(staging, ValidationConfig(schema_root=staging / ".project-kb" / "schemas"))
-        if issues:
-            codes = ", ".join(issue.code for issue in issues)
-            raise ValueError(f"materialized knowledge base is invalid: {codes}")
-        if target.exists():
-            raise FileExistsError(f"knowledge-base target appeared during initialization: {target}")
-        staging.replace(target)
-        if agent_entry is not None:
-            entry_path = project_root / agent_entry["filename"]
-            original_entry = entry_path.read_bytes() if entry_path.exists() else None
-            try:
-                apply_entry(project_root, agent_entry["host"], agent_entry["filename"], target.name)
-            except Exception:
-                if original_entry is None:
-                    if entry_path.exists():
-                        entry_path.unlink()
-                else:
-                    entry_path.write_bytes(original_entry)
-                shutil.rmtree(target)
-                raise
-        return target
-    except Exception:
-        if staging.exists():
-            shutil.rmtree(staging)
-        raise
-    finally:
-        if operation_root.exists():
-            shutil.rmtree(operation_root)
+    with operation_workspace(project_root, "initialize") as operation_root:
+        staging = operation_root / target.name
+        staging.mkdir()
+        try:
+            shutil.copytree(template, staging, dirs_exist_ok=True)
+            _replace_markers(
+                staging,
+                {
+                    "{{PROJECT_ID}}": name,
+                    "{{PROJECT_NAME}}": project_display_name or name,
+                    "{{KNOWLEDGE_BASE_NAME}}": target.name,
+                    "{{WORKSPACE_PROFILE}}": workspace_profile,
+                    "{{INITIALIZED_AT}}": initialized_at or date.today().isoformat(),
+                },
+            )
+            if proposal is not None:
+                _render_confirmed_content(staging, proposal)
+            if workspace_profile == "obsidian":
+                _materialize_obsidian_profile(staging)
+            shutil.copytree(assets_root / "scripts", staging / ".project-kb" / "scripts")
+            shutil.copytree(schema_root, staging / ".project-kb" / "schemas")
+            shutil.copy2(
+                assets_root / "compatibility.json",
+                staging / ".project-kb" / "compatibility.json",
+            )
+            issues = validate(staging, ValidationConfig(schema_root=staging / ".project-kb" / "schemas"))
+            if issues:
+                codes = ", ".join(issue.code for issue in issues)
+                raise ValueError(f"materialized knowledge base is invalid: {codes}")
+            if target.exists():
+                raise FileExistsError(f"knowledge-base target appeared during initialization: {target}")
+            staging.replace(target)
+            if agent_entry is not None:
+                entry_path = project_root / agent_entry["filename"]
+                original_entry = entry_path.read_bytes() if entry_path.exists() else None
+                try:
+                    apply_entry(project_root, agent_entry["host"], agent_entry["filename"], target.name)
+                except Exception:
+                    if original_entry is None:
+                        if entry_path.exists():
+                            entry_path.unlink()
+                    else:
+                        entry_path.write_bytes(original_entry)
+                    shutil.rmtree(target)
+                    raise
+            return target
+        except Exception:
+            if staging.exists():
+                shutil.rmtree(staging)
+            raise

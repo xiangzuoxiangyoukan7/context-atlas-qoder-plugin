@@ -9,7 +9,6 @@
     "current_slice",
     "depends_on",
     "acceptance",
-    "contracts",
     "adr",
     "last_updated"
   ],
@@ -28,5 +27,5 @@
     "last_updated": "\\d{4}-\\d{2}-\\d{2}"
   },
   "non_empty_lists": ["acceptance"],
-  "unique_lists": ["depends_on", "acceptance", "contracts", "adr", "sources", "blocking_questions"]
+  "unique_lists": ["depends_on", "acceptance", "adr", "sources", "blocking_questions"]
 }

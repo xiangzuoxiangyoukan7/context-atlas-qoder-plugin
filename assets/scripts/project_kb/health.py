@@ -36,7 +36,7 @@ def inspect_health(
     *,
     today: date | None = None,
     stale_days: int = 180,
-    excluded: Iterable[str] = (".obsidian", "Excalidraw", "Clippings", "90-历史归档"),
+    excluded: Iterable[str] = (".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"),
 ) -> HealthReport:
     """检查重复、孤立、陈旧、冲突、来源和权威入口缺口。"""
 

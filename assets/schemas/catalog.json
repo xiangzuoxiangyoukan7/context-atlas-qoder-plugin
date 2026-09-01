@@ -1,7 +1,5 @@
 {
   "acceptance": "acceptance.schema.json",
-  "acceptance_contract": "acceptance-contract.schema.json",
-  "independent_contract": "contract.schema.json",
   "data_asset": "data-asset.schema.json",
   "data_source": "data-source.schema.json",
   "database_namespace": "database-namespace.schema.json",
@@ -10,6 +8,7 @@
   "feature": "feature.schema.json",
   "governance_task": "governance-task.schema.json",
   "interface": "interface.schema.json",
+  "knowledge_index": "knowledge-index.schema.json",
   "knowledge_proposal": "knowledge-proposal.schema.json",
   "knowledge_item": "knowledge-item.schema.json",
   "module": "module.schema.json",

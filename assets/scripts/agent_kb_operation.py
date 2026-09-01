@@ -167,7 +167,7 @@ def _migration_proposal(root: Path, compatibility: Path) -> object:
     """发现知识记录并建立当前文件状态对应的只读迁移提案。"""
 
     records, issues = discover_records(
-        root.resolve(), frozenset({".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
+        root.resolve(), frozenset({".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
     )
     if issues:
         messages = "; ".join(f"{issue.code}: {issue.message}" for issue in issues)
@@ -333,6 +333,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         return 2
     payload = asdict(report)
+    if args.operation in {
+        "upgrade-diagnose", "diagnose-format", "upgrade-propose",
+        "migrate-propose", "upgrade-apply", "migrate-apply",
+    }:
+        compatibility = args.compatibility or _default_compatibility()
+        payload["runtime_assets_root"] = str(_default_assets_root().resolve())
+        payload["compatibility_path"] = str(compatibility.resolve())
     payload["ok"] = exit_code == 0
     print(json.dumps(payload, ensure_ascii=False, indent=2, default=str))
     return exit_code

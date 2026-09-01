@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import hashlib
 import json
 from pathlib import Path
+import re
 import tempfile
 from typing import Iterable
 
@@ -45,6 +46,7 @@ class MigrationRewrite:
 
     path: Path
     original_digest: str
+    content: str | None = None
 
 
 @dataclass(frozen=True)
@@ -133,41 +135,54 @@ def _revision(
     """根据完整提案内容生成稳定且不可猜测的短修订号。"""
 
     parts = [f"{source_version}->{target_version}"]
-    parts.extend(
+    # 每个类别都按规范化字符串排序。调用方即使传入由 set 或文件系统
+    # 遍历产生的非确定性顺序，也必须得到同一个提案修订号。
+    parts.extend(sorted(
         f"change:{change.path}:{change.original_digest}:{','.join(change.links)}"
         for change in changes
-    )
-    parts.extend(
+    ))
+    parts.extend(sorted(
         f"move:{move.source}:{move.target}:{move.original_digest}" for move in moves
-    )
-    parts.extend(
+    ))
+    parts.extend(sorted(
         f"remove:{removal.path}:{removal.original_digest}" for removal in removals
-    )
-    parts.extend(f"rewrite:{rewrite.path}:{rewrite.original_digest}" for rewrite in rewrites)
-    parts.extend(
+    ))
+    parts.extend(sorted(
+        f"rewrite:{rewrite.path}:{rewrite.original_digest}:"
+        f"{_digest(rewrite.content.encode('utf-8')) if rewrite.content is not None else 'dynamic'}"
+        for rewrite in rewrites
+    ))
+    parts.extend(sorted(
         f"create:{creation.path}:{creation.content_digest}" for creation in creations
-    )
-    parts.extend(
+    ))
+    parts.extend(sorted(
         f"asset:{asset.path}:{asset.original_digest or 'missing'}:{asset.content_digest}"
         for asset in assets
-    )
-    parts.extend(
+    ))
+    parts.extend(sorted(
         f"unresolved:{item.path}:{item.source_id}:{item.reason}"
         for item in unresolved
-    )
+    ))
     return "migration-" + hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:12]
 
 
-def _format_seven_creations(root: Path) -> tuple[MigrationCreation, ...]:
+def _current_format_creations(root: Path) -> tuple[MigrationCreation, ...]:
     """从随插件发布的核心模板补齐当前格式所需目录及其可达模板。"""
 
     template_root = Path(__file__).resolve().parents[2] / "templates" / "core" / "doc-project"
     relatives = (
+        Path("01-功能基线/需求/README.md"),
+        Path("01-功能基线/功能/README.md"),
+        Path("02-技术基线/README.md"),
+        Path("02-技术基线/模块/README.md"),
+        Path("02-技术基线/接口/README.md"),
+        Path("02-技术基线/数据库/README.md"),
+        Path("02-技术基线/数据资产/README.md"),
+        Path("02-技术基线/原型/README.md"),
+        Path("02-技术基线/外部依赖/README.md"),
         Path("03-变更与证据/变更/README.md"),
-        Path("03-变更与证据/变更/TEMPLATE.md"),
-        Path("03-变更与证据/变更/Delta/TEMPLATE.md"),
-        Path("03-变更与证据/验收契约/README.md"),
-        Path("03-变更与证据/验收契约/TEMPLATE.md"),
+        Path("03-变更与证据/验收证据/README.md"),
+        Path("03-变更与证据/待确认知识/README.md"),
     )
     creations: list[MigrationCreation] = []
     for relative in relatives:
@@ -190,7 +205,7 @@ def _asset_source_root() -> Path:
     raise FileNotFoundError("cannot locate plugin asset manifest")
 
 
-def _format_seven_assets(root: Path) -> tuple[MigrationAsset, ...]:
+def _current_format_assets(root: Path) -> tuple[MigrationAsset, ...]:
     """为当前格式提案枚举需要写入 `.project-kb` 的全部运行资产。"""
 
     source_root = _asset_source_root()
@@ -209,7 +224,7 @@ def _format_seven_assets(root: Path) -> tuple[MigrationAsset, ...]:
         if isinstance(relative, str)
         and (
             relative == "compatibility.json"
-            or relative.startswith(("schemas/", "scripts/", "rules/", "operations/", "templates/"))
+            or relative.startswith(("schemas/", "scripts/", "rules/", "operations/"))
         )
     ]
     selected = sorted([*selected, "manifest.json"])
@@ -227,6 +242,13 @@ def _format_seven_assets(root: Path) -> tuple[MigrationAsset, ...]:
         assets.append(
             MigrationAsset(target, content, original_digest, _digest(content))
         )
+    knowledge_templates = source_root / "templates" / "core" / "doc-project" / ".project-kb" / "templates" / "knowledge"
+    for source in sorted(knowledge_templates.glob("*.md")):
+        target = (root / ".project-kb" / "templates" / "knowledge" / source.name).resolve()
+        content = source.read_bytes()
+        original_digest = _digest(target.read_bytes()) if target.is_file() else None
+        if original_digest != _digest(content):
+            assets.append(MigrationAsset(target, content, original_digest, _digest(content)))
     return tuple(assets)
 
 
@@ -318,6 +340,7 @@ def _rewrite_governance_paths(content: str, governance_readme: bool = False) -> 
         .replace("03-实施与验收/影响分析", "03-变更与证据/影响记录")
         .replace("03-实施与验收/知识提案", "03-变更与证据/待确认知识")
         .replace("03-实施与验收", "03-变更与证据")
+        .replace("02-架构与契约", "02-技术基线")
     )
     if governance_readme:
         lines = [
@@ -326,6 +349,189 @@ def _rewrite_governance_paths(content: str, governance_readme: bool = False) -> 
         ]
         result = "\n".join(lines).rstrip() + "\n"
     return result
+
+
+FORMAT11_REMOVALS = {
+    "01-功能基线/能力地图.md",
+    "02-技术基线/关系目录.md",
+    "03-变更与证据/当前变更.md",
+    "03-变更与证据/验收矩阵.md",
+}
+
+FORMAT11_LEGACY_DIRECTORIES = (
+    "02-技术基线/独立契约",
+    "03-变更与证据/验收契约",
+)
+
+FORMAT11_CLASSIFICATION_INDEXES = {
+    "00-项目总览": "IDX-OVERVIEW",
+    "01-功能基线/需求": "IDX-REQUIREMENTS",
+    "01-功能基线/功能": "IDX-FEATURES",
+    "02-技术基线/模块": "IDX-MODULES",
+    "02-技术基线/接口": "IDX-INTERFACES",
+    "02-技术基线/数据库": "IDX-DATABASE",
+    "02-技术基线/数据资产": "IDX-DATA-ASSETS",
+    "02-技术基线/外部依赖": "IDX-DEPENDENCIES",
+    "02-技术基线/原型": "IDX-PROTOTYPES",
+    "02-技术基线": "IDX-TECHNICAL-BASELINE",
+    "03-变更与证据/变更": "IDX-CHANGES",
+    "03-变更与证据/验收证据": "IDX-EVIDENCE",
+    "03-变更与证据/待确认知识": "IDX-PROPOSALS",
+    "03-变更与证据": "IDX-CHANGES-EVIDENCE",
+    "04-决策记录": "IDX-DECISIONS",
+    "05-知识治理/来源资料": "IDX-SOURCES",
+    "05-知识治理": "IDX-GOVERNANCE",
+    "Clippings": "IDX-CLIPPINGS",
+}
+
+
+def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[MigrationRemoval, ...], tuple[MigrationUnresolved, ...]]:
+    """把旧技术目录迁入格式 11，并删除可再生或已退役的物理文件。"""
+
+    moves: list[MigrationMove] = []
+    removals: list[MigrationRemoval] = []
+    unresolved: list[MigrationUnresolved] = []
+    legacy_technical = root / "02-架构与契约"
+    if legacy_technical.is_dir():
+        for source in sorted(path for path in legacy_technical.rglob("*") if path.is_file()):
+            # TEMPLATE.md 是旧模板占位文件，由下面的删除计划处理，不能同时迁移。
+            if source.name == "TEMPLATE.md":
+                continue
+            if source.relative_to(legacy_technical).parts[0] == "独立契约":
+                # 独立契约目录已从当前格式移除；真实契约改放入通用知识目录，
+                # README/模板由删除计划处理。
+                if source.name == "README.md":
+                    removals.append(MigrationRemoval(source, _digest(source.read_bytes())))
+                    continue
+                target = root / "03-变更与证据" / "待确认知识" / source.name
+                if target.exists():
+                    unresolved.append(MigrationUnresolved(source, source.stem, "通用知识目标文件已存在"))
+                else:
+                    moves.append(MigrationMove(source, target, _digest(source.read_bytes())))
+                continue
+            if source.relative_to(legacy_technical).as_posix() == "关系目录.md":
+                removals.append(MigrationRemoval(source, _digest(source.read_bytes())))
+                continue
+            target = root / "02-技术基线" / source.relative_to(legacy_technical)
+            if target.exists():
+                unresolved.append(MigrationUnresolved(source, source.stem, "新旧技术基线路径同时存在"))
+            else:
+                moves.append(MigrationMove(source, target, _digest(source.read_bytes())))
+    for relative in sorted(FORMAT11_REMOVALS):
+        path = root / relative
+        if path.is_file():
+            removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    for directory in (root / "90-历史归档" / "旧契约", root / "90-历史归档" / "旧验收契约"):
+        if directory.is_dir():
+            for path in sorted(item for item in directory.rglob("*") if item.is_file()):
+                removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    for path in sorted(root.rglob("TEMPLATE.md")):
+        if ".project-kb" not in path.parts:
+            removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    for relative in FORMAT11_LEGACY_DIRECTORIES:
+        directory = root / relative
+        if not directory.is_dir():
+            continue
+        for path in sorted(item for item in directory.rglob("*") if item.is_file()):
+            if path.name == "README.md" or path.name == "TEMPLATE.md":
+                removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+            else:
+                target = root / "03-变更与证据" / "待确认知识" / path.name
+                if target.exists():
+                    unresolved.append(MigrationUnresolved(path, path.stem, "待确认知识目标文件已存在"))
+                else:
+                    moves.append(MigrationMove(path, target, _digest(path.read_bytes())))
+    move_sources = {move.source.resolve() for move in moves}
+    removal_paths = {removal.path.resolve() for removal in removals}
+    conflicts = move_sources & removal_paths
+    if conflicts:
+        for path in sorted(conflicts):
+            unresolved.append(
+                MigrationUnresolved(
+                    path,
+                    path.name,
+                    "同一路径同时出现在移动和删除计划中",
+                )
+            )
+        moves = [move for move in moves if move.source.resolve() not in conflicts]
+    unique_removals = {removal.path.resolve(): removal for removal in removals}
+    return (
+        tuple(moves),
+        tuple(sorted(unique_removals.values(), key=lambda item: str(item.path))),
+        tuple(unresolved),
+    )
+
+
+def _format11_classification(relative: str, identifier: str | None) -> str | None:
+    """根据最终路径生成格式 11 的唯一分类关系。"""
+
+    if identifier == "IDX-ROOT":
+        return "rel_classified_under: []"
+    directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
+    index = next(
+        (value for prefix, value in FORMAT11_CLASSIFICATION_INDEXES.items()
+         if directory == prefix or directory.startswith(prefix + "/")),
+        None,
+    )
+    if index is None:
+        return None
+    prefix = directory if directory in FORMAT11_CLASSIFICATION_INDEXES else next(
+        prefix for prefix in FORMAT11_CLASSIFICATION_INDEXES
+        if directory == prefix or directory.startswith(prefix + "/")
+    )
+    return f'rel_classified_under:\n  - "[[{prefix}/README|{index}]]"'
+
+
+def _format11_document(content: str, relative: str, initialized_at: str | None) -> str:
+    """将旧文档的路径、分类和已知旧契约类型转换为格式 11 表达。"""
+
+    result = _rewrite_governance_paths(content)
+    lines = result.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return result
+    closing = next((i for i, line in enumerate(lines[1:], 1) if line.rstrip("\r\n") == "---"), None)
+    if closing is None:
+        return result
+    metadata = "".join(lines[1:closing])
+    identifier_match = re.search(r"(?m)^id:\s*(\S+)", metadata)
+    identifier = identifier_match.group(1) if identifier_match else None
+    type_match = re.search(
+        r"(?m)^type:\s*(contract|independent_contract|acceptance_contract)\s*$",
+        metadata,
+    )
+    if type_match:
+        metadata = re.sub(
+            r"(?m)^type:\s*(?:contract|independent_contract|acceptance_contract)\s*$",
+            "type: knowledge_item",
+            metadata,
+        )
+        if not re.search(r"(?m)^status:", metadata):
+            metadata += "status: missing\n"
+        if not re.search(r"(?m)^sources:", metadata):
+            reference = relative.replace("\\", "/")
+            metadata += "sources:\n  - type: repository_file\n"
+            metadata += f"    reference: {json.dumps(reference, ensure_ascii=False)}\n"
+            metadata += "    confirmation_status: observed\n"
+        if not re.search(r"(?m)^last_updated:", metadata) and initialized_at:
+            metadata += f"last_updated: {initialized_at}\n"
+    classification = _format11_classification(relative, identifier)
+    if classification:
+        metadata = re.sub(r"(?ms)^rel_classified_under:.*?(?=^[A-Za-z_][A-Za-z0-9_]*:|\Z)", "", metadata)
+        metadata = re.sub(r"(?m)^type:.*$", lambda match: match.group(0) + "\n" + classification, metadata, count=1)
+    return "".join([lines[0], metadata, lines[closing], *lines[closing + 1:]])
+
+
+def _initialized_at(root: Path) -> str | None:
+    """读取清单初始化日期，供遗留文档补齐最新元数据。"""
+
+    manifest = root / "knowledge-base.yaml"
+    if not manifest.is_file():
+        return None
+    match = re.search(
+        r"(?m)^initialized_at:\s*(\d{4}-\d{2}-\d{2})\s*$",
+        manifest.read_text(encoding="utf-8"),
+    )
+    return match.group(1) if match else None
 
 
 def build_migration_proposal(
@@ -395,6 +601,11 @@ def build_migration_proposal(
             )
     ordered_changes = tuple(sorted(changes, key=lambda item: str(item.path)))
     moves, removals, rewrites, layout_unresolved = _governance_layout(resolved_root)
+    if result.creates_format_version >= 11:
+        format_moves, format_removals, format_unresolved = _format11_layout(resolved_root)
+        moves += format_moves
+        removals += format_removals
+        layout_unresolved += format_unresolved
     destinations = {move.target for move in moves}
     for move in _evidence_layout(resolved_root):
         if move.target.exists() or move.target in destinations:
@@ -404,12 +615,6 @@ def build_migration_proposal(
         else:
             moves += (move,)
             destinations.add(move.target)
-    rewrite_paths = {item.path.resolve() for item in rewrites}
-    for path in resolved_root.rglob("*.md"):
-        content = path.read_text(encoding="utf-8")
-        if ("00-项目总览/SRC-" in content or "rel_implements:" in content) and path.resolve() not in rewrite_paths:
-            rewrites += (MigrationRewrite(path.resolve(), _digest(path.read_bytes())),)
-            rewrite_paths.add(path.resolve())
     for source_id, record in source_records.items():
         if source_id not in referenced_source_ids:
             unresolved.append(MigrationUnresolved(record.path.resolve(), source_id, "来源未被任何知识项引用，不能安全删除"))
@@ -424,12 +629,29 @@ def build_migration_proposal(
                 unresolved.append(MigrationUnresolved(record.path.resolve(), source_id, "公共来源新旧位置同时存在"))
             else:
                 moves += (MigrationMove(record.path.resolve(), destination, _digest(record.path.read_bytes())),)
+    initialized_at = _initialized_at(resolved_root)
+    moved_sources = {move.source.resolve() for move in moves}
+    if result.creates_format_version >= 11:
+        for path in sorted(resolved_root.rglob("*.md")):
+            if path.resolve() in moved_sources:
+                continue
+            original = path.read_text(encoding="utf-8")
+            normalized = _format11_document(
+                original,
+                path.resolve().relative_to(resolved_root).as_posix(),
+                initialized_at,
+            )
+            if normalized == original:
+                continue
+            rewrites = tuple(
+                item for item in rewrites if item.path.resolve() != path.resolve()
+            ) + (MigrationRewrite(path.resolve(), _digest(path.read_bytes()), normalized),)
     unresolved.extend(layout_unresolved)
     ordered_unresolved = tuple(
         sorted(unresolved, key=lambda item: (str(item.path), item.source_id))
     )
-    creations = _format_seven_creations(resolved_root)
-    assets = _format_seven_assets(resolved_root)
+    creations = _current_format_creations(resolved_root)
+    assets = _current_format_assets(resolved_root)
     return MigrationProposal(
         proposal_revision=_revision(
             result.format_version,
@@ -640,17 +862,23 @@ def apply_migration(
         for move in proposal.moves:
             move.target.parent.mkdir(parents=True, exist_ok=True)
             move.source.replace(move.target)
-            if move.target.name == "README.md":
-                _atomic_write(
-                    move.target,
-                    _rewrite_governance_paths(move.target.read_text(encoding="utf-8"), governance_readme=True),
+            if move.target.suffix.lower() == ".md":
+                normalized = _format11_document(
+                    move.target.read_text(encoding="utf-8"),
+                    move.target.resolve().relative_to(resolved_root).as_posix(),
+                    _initialized_at(resolved_root),
                 )
+                if move.target.name == "README.md":
+                    normalized = _rewrite_governance_paths(normalized, governance_readme=True)
+                _atomic_write(move.target, normalized)
         for removal in proposal.removals:
             removal.path.unlink()
         for rewrite in proposal.rewrites:
             _atomic_write(
                 rewrite.path,
-                _rewrite_governance_paths(rewrite.path.read_text(encoding="utf-8")),
+                rewrite.content
+                if rewrite.content is not None
+                else _rewrite_governance_paths(rewrite.path.read_text(encoding="utf-8")),
             )
         for creation in proposal.creations:
             creation.path.parent.mkdir(parents=True, exist_ok=True)
@@ -659,6 +887,15 @@ def apply_migration(
             asset.path.parent.mkdir(parents=True, exist_ok=True)
             _atomic_write_bytes(asset.path, asset.content)
         _atomic_write(manifest, manifest_content)
+        for directory in sorted(
+            (path for path in resolved_root.rglob("*") if path.is_dir()),
+            key=lambda path: len(path.parts),
+            reverse=True,
+        ):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
     except Exception:
         for path, content in backups.items():
             if content is None:

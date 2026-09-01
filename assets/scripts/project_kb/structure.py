@@ -12,9 +12,10 @@ from .model import DocumentRecord, Issue
 REQUIRED_ENTRIES = (
     "README.md", "knowledge-base.yaml", "00-项目总览/README.md",
     "00-项目总览/项目概述.md", "01-功能基线/README.md",
-    "01-功能基线/能力地图.md", "02-架构与契约/README.md",
-    "02-架构与契约/系统架构.md", "03-变更与证据/README.md",
-    "03-变更与证据/验收矩阵.md", "04-决策记录/README.md",
+    "01-功能基线/需求/README.md", "01-功能基线/功能/README.md",
+    "02-技术基线/README.md",
+    "02-技术基线/系统架构.md", "03-变更与证据/README.md",
+    "04-决策记录/README.md",
     "05-知识治理/README.md", "05-知识治理/AI知识采集协议.md",
     "90-历史归档/README.md",
 )
@@ -23,16 +24,36 @@ TYPE_DIRECTORIES = {
     "source": "05-知识治理",
     "requirement": "01-功能基线/需求",
     "feature": "01-功能基线/功能",
-    "data_asset": "02-架构与契约",
-    "data_source": "02-架构与契约",
-    "database_unit": "02-架构与契约",
-    "database_namespace": "02-架构与契约",
-    "database_table": "02-架构与契约",
+    "data_asset": "02-技术基线",
+    "data_source": "02-技术基线",
+    "database_unit": "02-技术基线",
+    "database_namespace": "02-技术基线",
+    "database_table": "02-技术基线",
     "acceptance": "03-变更与证据",
     "knowledge_proposal": "03-变更与证据",
-    "module": "02-架构与契约/模块",
-    "interface": "02-架构与契约/接口",
-    "independent_contract": "02-架构与契约/独立契约",
+    "module": "02-技术基线/模块",
+    "interface": "02-技术基线/接口",
+    "knowledge_index": "",
+}
+CLASSIFICATION_INDEXES = {
+    "00-项目总览": "IDX-OVERVIEW",
+    "01-功能基线/需求": "IDX-REQUIREMENTS",
+    "01-功能基线/功能": "IDX-FEATURES",
+    "02-技术基线/模块": "IDX-MODULES",
+    "02-技术基线/接口": "IDX-INTERFACES",
+    "02-技术基线/数据库": "IDX-DATABASE",
+    "02-技术基线/数据资产": "IDX-DATA-ASSETS",
+    "02-技术基线/外部依赖": "IDX-DEPENDENCIES",
+    "02-技术基线/原型": "IDX-PROTOTYPES",
+    "02-技术基线": "IDX-TECHNICAL-BASELINE",
+    "03-变更与证据/变更": "IDX-CHANGES",
+    "03-变更与证据/验收证据": "IDX-EVIDENCE",
+    "03-变更与证据/待确认知识": "IDX-PROPOSALS",
+    "03-变更与证据": "IDX-CHANGES-EVIDENCE",
+    "04-决策记录": "IDX-DECISIONS",
+    "05-知识治理/来源资料": "IDX-SOURCES",
+    "05-知识治理": "IDX-GOVERNANCE",
+    "Clippings": "IDX-CLIPPINGS",
 }
 LEGACY_FIXED = {
     "03-实施与验收",
@@ -47,6 +68,13 @@ LEGACY_FIXED = {
     "00-项目总览/知识来源.md",
     "00-项目总览/协作人员.md",
     "05-开发指南",
+    "01-功能基线/能力地图.md",
+    "02-架构与契约",
+    "02-技术基线/关系目录.md",
+    "03-变更与证据/当前变更.md",
+    "03-变更与证据/验收矩阵.md",
+    "90-历史归档/旧契约",
+    "90-历史归档/旧验收契约",
 }
 
 
@@ -102,7 +130,7 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
     for record in records:
         kind = record.metadata.get("type")
         expected = TYPE_DIRECTORIES.get(str(kind))
-        if expected is not None:
+        if expected:
             relative = record.path.resolve().relative_to(root.resolve()).as_posix()
             identifier = record.metadata.get("id")
             legacy_feature = (
@@ -117,4 +145,26 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
         sources = record.metadata.get("sources")
         if format_version >= 4 and isinstance(sources, list) and any(not isinstance(item, dict) for item in sources):
             issues.append(Issue("KB_SOURCE_LEGACY", record.path, "format 4 requires embedded source objects"))
+        if format_version >= 11:
+            relative = record.path.resolve().relative_to(root.resolve()).as_posix()
+            if relative.startswith((".project-kb/", "90-历史归档/", "05-知识治理/来源资料/files/")):
+                continue
+            identifier = record.metadata.get("id")
+            relations = record.metadata.get("rel_classified_under")
+            if identifier == "IDX-ROOT":
+                if relations != []:
+                    issues.append(Issue("KB_CLASSIFICATION_ROOT", record.path, "IDX-ROOT must not have a parent classification"))
+                continue
+            if not isinstance(relations, list) or len(relations) != 1:
+                issues.append(Issue("KB_CLASSIFICATION_REQUIRED", record.path, "format 11 knowledge must have exactly one rel_classified_under"))
+                continue
+            if record.metadata.get("type") == "knowledge_index":
+                continue
+            directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
+            expected_index = next(
+                (index for prefix, index in CLASSIFICATION_INDEXES.items() if directory == prefix or directory.startswith(prefix + "/")),
+                None,
+            )
+            if expected_index is not None and f"|{expected_index}]]" not in str(relations[0]):
+                issues.append(Issue("KB_CLASSIFICATION_DIRECTORY", record.path, f"classification must match directory index {expected_index}"))
     return issues

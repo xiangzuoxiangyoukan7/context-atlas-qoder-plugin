@@ -100,7 +100,7 @@ def build_archive_proposal(
         raise ValueError("归档源必须有 id 且状态为 superseded")
     if record.metadata.get("superseded_by") != successor_id:
         raise ValueError("归档源的 superseded_by 与后继编号不一致")
-    records, issues = discover_records(root, frozenset({".obsidian", "Excalidraw", "Clippings", "90-历史归档"}))
+    records, issues = discover_records(root, frozenset({".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"}))
     if issues:
         raise ValueError("当前知识发现失败")
     ids = {item.metadata.get("id"): item for item in records}

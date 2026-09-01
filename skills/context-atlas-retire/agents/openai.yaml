@@ -1,4 +1,6 @@
 interface:
-  display_name: "Context Atlas Retire"
-  short_description: "通过替代、归档或受控删除退役正式知识"
-  default_prompt: "使用 $context-atlas-retire 安全退役当前项目知识库中的一项正式知识。"
+  display_name: "context-atlas-retire"
+  short_description: "撤销无后继项的当前权威或归档已替代知识"
+  default_prompt: "使用 $context-atlas-retire 撤销无后继项的当前权威，或归档一项已替代知识。"
+policy:
+  allow_implicit_invocation: false
