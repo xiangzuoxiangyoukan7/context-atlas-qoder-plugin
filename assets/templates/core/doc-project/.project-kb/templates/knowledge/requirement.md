@@ -3,20 +3,13 @@ id: REQ-DOMAIN-001
 type: requirement
 title: 需求名称
 status: proposed
-approval_status: proposed
-lifecycle_status: candidate
-spec_readiness: draft
+readiness: draft
 priority: P1
-sources: []
-stakeholders: []
-business_rules: []
-success_criteria: []
-assumptions: []
-blocking_questions: []
 last_updated: {{INITIALIZED_AT}}
 rel_classified_under:
   - "[[01-功能基线/需求/README|IDX-REQUIREMENTS]]"
 ---
+<!-- context-atlas-rules: [[rules/知识治理规则#RULE-SPEC-001|RULE-SPEC-001]] -->
 # REQ-DOMAIN-001：需求名称
 
 ## 问题与价值
@@ -33,13 +26,15 @@ rel_classified_under:
 
 ## 业务规则
 
-| 编号 | 规则 | 来源 |
+| ID | 规则 | 来源 |
 | --- | --- | --- |
+| BR-DOMAIN-001 | 待确认 | 待确认 |
 
-## 成功指标
+## 成功标准
 
-| 编号 | 指标 | 当前值 | 目标值 | 测量方式 | 来源 |
-| --- | --- | --- | --- | --- | --- |
+| ID | 可观察结果 | 验证方式 | 来源 |
+| --- | --- | --- | --- |
+| SC-DOMAIN-001 | 待确认 | 待确认 | 待确认 |
 
 ## 约束与依赖
 
@@ -51,4 +46,10 @@ rel_classified_under:
 
 ## 待澄清问题
 
-阻塞问题使用稳定 ID，并记录问题、影响范围和状态；无法确认的内容保持未知，不补写推测。
+| ID | 问题 | 影响范围 | 状态 |
+| --- | --- | --- | --- |
+
+## 来源与确认
+
+| 类型 | 精确定位 | 观察时间 | 确认状态 | 确认时间 |
+| --- | --- | --- | --- | --- |

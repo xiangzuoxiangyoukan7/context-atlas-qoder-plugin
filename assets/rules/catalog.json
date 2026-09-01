@@ -74,6 +74,12 @@
       "enforced_by": ["acceptance", "operation", "skill", "template", "validator"]
     },
     {
+      "id": "RULE-SPEC-001",
+      "name_zh": "需求正文唯一权威且就绪度独立",
+      "authority": "[[rules/知识治理规则#RULE-SPEC-001|RULE-SPEC-001]]",
+      "enforced_by": ["schema", "template", "validator"]
+    },
+    {
       "id": "RULE-SRC-001",
       "name_zh": "正式知识和质检结果必须引用来源与目标",
       "authority": "[[rules/知识治理规则#RULE-SRC-001|RULE-SRC-001]]",

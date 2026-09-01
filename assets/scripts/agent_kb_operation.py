@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 from dataclasses import asdict
+from dataclasses import replace
 import json
 from pathlib import Path
 import sys
@@ -24,6 +25,7 @@ from scripts.project_kb.archive import apply_archive, build_archive_proposal
 from scripts.project_kb.health import inspect_health
 from scripts.project_kb.ingest_enhancements import save_ingest_history
 from scripts.project_kb.managed_sources import apply_source_import, build_source_import_proposal
+from scripts.project_kb.validator import ValidationConfig, validate
 
 
 def _default_assets_root() -> Path:
@@ -121,6 +123,11 @@ def _parser() -> argparse.ArgumentParser:
     graph.add_argument("--relation")
     graph.add_argument("--type", dest="node_type")
     graph.add_argument("--status")
+    graph.add_argument(
+        "--expand-classification-members",
+        action="store_true",
+        help="显式允许图查询从 README 分类节点继续展开成员",
+    )
 
     health = subparsers.add_parser("health")
     health.add_argument("knowledge_base_root", type=Path)
@@ -208,11 +215,21 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
         )
         return report, report.validator_exit_code
     if args.operation in {"upgrade-diagnose", "diagnose-format"}:
-        result = CompatibilityPolicy.load(
+        policy = CompatibilityPolicy.load(
             args.compatibility or _default_compatibility()
-        ).diagnose(
-            args.knowledge_base_root
         )
+        result = policy.diagnose(args.knowledge_base_root)
+        if result.format_version == result.created_format_version:
+            issues = validate(
+                args.knowledge_base_root,
+                ValidationConfig(schema_root=_default_assets_root() / "schemas"),
+            )
+            if issues:
+                result = replace(
+                    result,
+                    status="needs_normalization",
+                    conversion_available=True,
+                )
         return result, 2 if result.write_blocked else 0
     if args.operation == "capture":
         candidate = CaptureCandidate(
@@ -263,6 +280,7 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
             relation=args.relation,
             node_type=args.node_type,
             status=args.status,
+            expand_classification_members=args.expand_classification_members,
         ), 0
     if args.operation == "health":
         return inspect_health(

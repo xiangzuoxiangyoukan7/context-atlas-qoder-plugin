@@ -97,7 +97,14 @@ def _validate_lifecycle(
                     Issue("KB_SOURCE_TYPE", record.path, f"source reference is not a source: {source}")
                 )
         if status == "approved":
-            missing = [field for field in ("approved_by", "approved_at") if not metadata.get(field)]
+            body_authoritative_requirement = (
+                metadata.get("type") == "requirement" and "readiness" in metadata
+            )
+            missing = (
+                []
+                if body_authoritative_requirement
+                else [field for field in ("approved_by", "approved_at") if not metadata.get(field)]
+            )
             if missing:
                 issues.append(
                     Issue(
@@ -106,6 +113,21 @@ def _validate_lifecycle(
                         f"approved item lacks: {', '.join(missing)}",
                     )
                 )
+            if body_authoritative_requirement:
+                source_section = re.search(
+                    r"(?ms)^## 来源与确认\s*\n(.*?)(?=^## |\Z)", record.body
+                )
+                if source_section is None or not re.search(
+                    r"(?mi)^\|.*\|\s*confirmed\s*\|.*\|\s*$",
+                    source_section.group(1),
+                ):
+                    issues.append(
+                        Issue(
+                            "KB_APPROVAL_REQUIRED",
+                            record.path,
+                            "approved requirement requires a confirmed source row in 来源与确认",
+                        )
+                    )
             proposal_revision = metadata.get("proposal_revision")
             confirmed_revision = metadata.get("confirmed_revision")
             if (

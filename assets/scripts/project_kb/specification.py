@@ -1,5 +1,7 @@
 """验证规格就绪度、内嵌验收场景、接口粒度和变更增量。"""
 
+# context-atlas-rules: [[rules/知识治理规则#RULE-SPEC-001|RULE-SPEC-001]]
+
 from __future__ import annotations
 
 from collections.abc import Iterable
@@ -29,6 +31,26 @@ def _registered(value: object) -> bool:
     }
 
 
+def _section(body: str, title: str) -> str:
+    """返回一个二级 Markdown 章节正文，不把后续同级章节混入。"""
+
+    match = re.search(
+        rf"(?ms)^## {re.escape(title)}\s*\n(.*?)(?=^## |\Z)",
+        body,
+    )
+    return match.group(1).strip() if match else ""
+
+
+def _open_requirement_questions(body: str) -> list[str]:
+    """从需求正文读取仍为 open 的稳定阻塞问题。"""
+
+    section = _section(body, "待澄清问题")
+    return re.findall(
+        r"(?mi)^\|\s*(BQ-[A-Z0-9_-]+)\s*\|.*?\|\s*open\s*\|\s*$",
+        section,
+    )
+
+
 def validate_specifications(
     records: Iterable[DocumentRecord],
     relation_index: RelationIndex | None = None,
@@ -56,8 +78,17 @@ def validate_specifications(
 
     for record in materialized:
         metadata = record.metadata
-        readiness = metadata.get("spec_readiness")
-        questions = _as_list(metadata.get("blocking_questions"))
+        kind = metadata.get("type")
+        readiness = (
+            metadata.get("readiness", metadata.get("spec_readiness"))
+            if kind == "requirement"
+            else metadata.get("spec_readiness")
+        )
+        questions = (
+            _open_requirement_questions(record.body)
+            if kind == "requirement" and "readiness" in metadata
+            else _as_list(metadata.get("blocking_questions"))
+        )
         if readiness == "blocked" and not questions:
             issues.append(
                 Issue("KB_SPEC_BLOCKER_REQUIRED", record.path, "blocked specification requires blocking_questions")
@@ -67,7 +98,6 @@ def validate_specifications(
                 Issue("KB_SPEC_READY_BLOCKED", record.path, "ready specification cannot retain blocking_questions")
             )
 
-        kind = metadata.get("type")
         if readiness == "ready" and kind == "feature":
             if " MUST " not in record.body and " SHALL " not in record.body:
                 issues.append(
@@ -105,16 +135,23 @@ def validate_specifications(
                     )
                     break
         if readiness == "ready" and kind == "requirement":
-            for field in ("stakeholders", "business_rules", "success_criteria"):
-                if not _as_list(metadata.get(field)):
-                    issues.append(
-                        Issue("KB_SPEC_REQUIREMENT", record.path, f"ready requirement lacks {field}")
-                    )
-            identifier = metadata.get("id")
-            if relation_index is not None and identifier not in features_by_requirement:
-                issues.append(
-                    Issue("KB_COVERAGE_REQUIREMENT", record.path, "ready requirement is not satisfied by a feature")
-                )
+            if "readiness" in metadata:
+                required_sections = ("问题与价值", "范围", "业务规则", "成功标准", "约束与依赖", "来源与确认")
+                for section in required_sections:
+                    if not _section(record.body, section):
+                        issues.append(
+                            Issue("KB_SPEC_REQUIREMENT", record.path, f"ready requirement lacks section: {section}")
+                        )
+                if not re.search(r"(?m)^\|\s*BR-[A-Z0-9_-]+\s*\|", _section(record.body, "业务规则")):
+                    issues.append(Issue("KB_SPEC_REQUIREMENT", record.path, "ready requirement lacks stable BR-* rules"))
+                if not re.search(r"(?m)^\|\s*SC-[A-Z0-9_-]+\s*\|", _section(record.body, "成功标准")):
+                    issues.append(Issue("KB_SPEC_REQUIREMENT", record.path, "ready requirement lacks stable SC-* criteria"))
+            else:
+                for field in ("stakeholders", "business_rules", "success_criteria"):
+                    if not _as_list(metadata.get(field)):
+                        issues.append(
+                            Issue("KB_SPEC_REQUIREMENT", record.path, f"ready requirement lacks {field}")
+                        )
         if readiness == "ready" and kind == "feature" and relation_index is not None:
             identifier = metadata.get("id")
             implementation_relations = {

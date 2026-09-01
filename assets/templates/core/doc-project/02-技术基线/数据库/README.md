@@ -7,6 +7,10 @@ rel_classified_under:
 ---
 # 数据库知识
 
+## 目录契约
+
+本目录只保存数据库层级和表结构知识，不保存连接密钥或执行日志。新增正式子目录时必须创建稳定 `IDX-*` README，目录内知识项指向该直接分类。使用 `children` 查看目录内容、`neighbors` 查询直接成员；普通 `graph` 到达 README 后停止，只有显式分类成员查询才继续展开。
+
 <!-- context-atlas-rules: [[rules/知识治理规则#RULE-DB-001|RULE-DB-001]] -->
 
 默认按数据源隔离：每个数据源创建 `DS-<领域>-<名称>/` 目录，公共连接、产品、版本、安全和治理信息写入该目录的 `README.md`，项目依赖的每张表在同一目录下一表一文件。创建时使用`.project-kb/templates/knowledge/data-source.md`和`.project-kb/templates/knowledge/database-table.md`。

@@ -13,7 +13,8 @@ from .relation_catalog import RelationCatalog
 from .relations import RelationIndex
 
 
-EXCLUDED_DIRECTORIES = frozenset({".obsidian", "Excalidraw", "Clippings", "90-历史归档", ".project-kb"})
+EXCLUDED_DIRECTORIES = frozenset({".obsidian", "Excalidraw", "Clippings", ".project-kb"})
+GRAPH_EXCLUDED_DIRECTORIES = EXCLUDED_DIRECTORIES | frozenset({"90-历史归档"})
 ALLOWED_DIRECTIONS = frozenset({"outgoing", "incoming", "both"})
 
 
@@ -129,6 +130,25 @@ def _record_map(records: Iterable[DocumentRecord]) -> dict[Path, DocumentRecord]
     """按绝对路径索引已解析文档。"""
 
     return {record.path.resolve(): record for record in records}
+
+
+def _discover_graph_records(root: Path) -> tuple[list[DocumentRecord], list[object]]:
+    """发现现行知识及具备格式 11 分类关系的归档知识。"""
+
+    records, issues = discover_records(root, GRAPH_EXCLUDED_DIRECTORIES)
+    archive = root / "90-历史归档"
+    if archive.is_dir():
+        archived, archive_issues = discover_records(
+            archive, frozenset({".obsidian", "Excalidraw"})
+        )
+        issues.extend(archive_issues)
+        records.extend(
+            record
+            for record in archived
+            if record.path.name == "README.md"
+            or isinstance(record.metadata.get("rel_classified_under"), list)
+        )
+    return records, issues
 
 
 def _summary(body: str) -> str | None:
@@ -294,7 +314,7 @@ def query_neighbors(
     if relation is not None and catalog.get(relation) is None:
         raise ValueError(f"unknown relation: {relation}")
 
-    records, discovery_issues = discover_records(root, EXCLUDED_DIRECTORIES)
+    records, discovery_issues = _discover_graph_records(root)
     if discovery_issues:
         raise ValueError(f"knowledge discovery failed: {_issue_message(discovery_issues)}")
     index, relation_issues = RelationIndex.build(root, records, catalog)
@@ -340,6 +360,7 @@ def query_graph(
     relation: str | None = None,
     node_type: str | None = None,
     status: str | None = None,
+    expand_classification_members: bool = False,
 ) -> GraphReport:
     """返回受限多跳子图，或在显式请求时返回受数量限制的完整图。"""
 
@@ -356,7 +377,7 @@ def query_graph(
     catalog = RelationCatalog.load(root / ".project-kb" / "schemas" / "relation-catalog.json")
     if relation is not None and catalog.get(relation) is None:
         raise ValueError(f"unknown relation: {relation}")
-    records, discovery_issues = discover_records(root, EXCLUDED_DIRECTORIES)
+    records, discovery_issues = _discover_graph_records(root)
     if discovery_issues:
         raise ValueError(f"knowledge discovery failed: {_issue_message(discovery_issues)}")
     index, relation_issues = RelationIndex.build(root, records, catalog)
@@ -394,9 +415,19 @@ def query_graph(
         for _ in range(depth):
             adjacent: set[str] = set()
             for edge in candidate_edges:
-                if edge.source.identifier in frontier:
+                source_is_boundary = (
+                    index.target(edge.source.identifier) is not None
+                    and index.target(edge.source.identifier).kind == "knowledge_index"  # type: ignore[union-attr]
+                    and not expand_classification_members
+                )
+                target_is_boundary = (
+                    index.target(edge.target.identifier) is not None
+                    and index.target(edge.target.identifier).kind == "knowledge_index"  # type: ignore[union-attr]
+                    and not expand_classification_members
+                )
+                if edge.source.identifier in frontier and not source_is_boundary:
                     adjacent.add(edge.target.identifier)
-                if edge.target.identifier in frontier:
+                if edge.target.identifier in frontier and not target_is_boundary:
                     adjacent.add(edge.source.identifier)
             adjacent = {identifier for identifier in adjacent if allowed(identifier)} - selected
             remaining = max_nodes - len(selected)

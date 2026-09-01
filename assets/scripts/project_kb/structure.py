@@ -6,7 +6,11 @@ from pathlib import Path
 import re
 from typing import Iterable
 
+from .frontmatter import FrontMatterError, parse_document
 from .model import DocumentRecord, Issue
+
+
+CLASSIFICATION_TARGET = re.compile(r"\|(?P<id>IDX-[A-Z0-9_-]+)\]\]$")
 
 
 REQUIRED_ENTRIES = (
@@ -37,6 +41,7 @@ TYPE_DIRECTORIES = {
 }
 CLASSIFICATION_INDEXES = {
     "00-项目总览": "IDX-OVERVIEW",
+    "01-功能基线": "IDX-FUNCTIONAL-BASELINE",
     "01-功能基线/需求": "IDX-REQUIREMENTS",
     "01-功能基线/功能": "IDX-FEATURES",
     "02-技术基线/模块": "IDX-MODULES",
@@ -53,7 +58,7 @@ CLASSIFICATION_INDEXES = {
     "04-决策记录": "IDX-DECISIONS",
     "05-知识治理/来源资料": "IDX-SOURCES",
     "05-知识治理": "IDX-GOVERNANCE",
-    "Clippings": "IDX-CLIPPINGS",
+    "90-历史归档": "IDX-ARCHIVE",
 }
 LEGACY_FIXED = {
     "03-实施与验收",
@@ -127,7 +132,43 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
         if path.exists():
             issues.append(Issue("KB_STRUCTURE_LEGACY", path, f"legacy fixed entry remains: {relative}"))
     format_version = _format_version(root / "knowledge-base.yaml")
-    for record in records:
+    record_list = list(records)
+    if format_version >= 11:
+        archive_readme = root / "90-历史归档/README.md"
+        if archive_readme.is_file() and all(
+            record.path.resolve() != archive_readme.resolve() for record in record_list
+        ):
+            try:
+                record_list.append(parse_document(archive_readme))
+            except FrontMatterError as error:
+                issues.append(Issue("KB_FRONTMATTER", archive_readme, str(error)))
+        for directory in CLASSIFICATION_INDEXES:
+            if not (root / directory).is_dir():
+                continue
+            readme = root / directory / "README.md"
+            if not readme.is_file():
+                issues.append(
+                    Issue(
+                        "KB_CLASSIFICATION_README",
+                        readme,
+                        f"formal knowledge directory must contain README.md: {directory}",
+                    )
+                )
+
+    classification_ids: dict[str, DocumentRecord] = {}
+    indexes_by_directory: dict[str, str] = {}
+    for record in record_list:
+        identifier = record.metadata.get("id")
+        if (
+            record.metadata.get("type") == "knowledge_index"
+            and record.path.name == "README.md"
+            and isinstance(identifier, str)
+        ):
+            relative = record.path.resolve().relative_to(root.resolve()).as_posix()
+            directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
+            indexes_by_directory[directory] = identifier
+    classification_parents: dict[str, str] = {}
+    for record in record_list:
         kind = record.metadata.get("type")
         expected = TYPE_DIRECTORIES.get(str(kind))
         if expected:
@@ -147,7 +188,9 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
             issues.append(Issue("KB_SOURCE_LEGACY", record.path, "format 4 requires embedded source objects"))
         if format_version >= 11:
             relative = record.path.resolve().relative_to(root.resolve()).as_posix()
-            if relative.startswith((".project-kb/", "90-历史归档/", "05-知识治理/来源资料/files/")):
+            if relative == "Clippings/README.md" or relative.startswith(
+                (".project-kb/", "Clippings/", "05-知识治理/来源资料/files/")
+            ):
                 continue
             identifier = record.metadata.get("id")
             relations = record.metadata.get("rel_classified_under")
@@ -156,15 +199,42 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
                     issues.append(Issue("KB_CLASSIFICATION_ROOT", record.path, "IDX-ROOT must not have a parent classification"))
                 continue
             if not isinstance(relations, list) or len(relations) != 1:
-                issues.append(Issue("KB_CLASSIFICATION_REQUIRED", record.path, "format 11 knowledge must have exactly one rel_classified_under"))
+                issues.append(Issue("KB_CLASSIFICATION_REQUIRED", record.path, "format 11+ knowledge must have exactly one rel_classified_under"))
                 continue
             if record.metadata.get("type") == "knowledge_index":
+                if record.path.name != "README.md":
+                    issues.append(Issue("KB_CLASSIFICATION_FILENAME", record.path, "knowledge_index must be stored as README.md"))
+                    continue
+                if isinstance(identifier, str):
+                    if identifier in classification_ids:
+                        issues.append(Issue("KB_CLASSIFICATION_DUPLICATE", record.path, f"duplicate classification id: {identifier}"))
+                    classification_ids[identifier] = record
+                    match = CLASSIFICATION_TARGET.search(str(relations[0]))
+                    if match is not None:
+                        classification_parents[identifier] = match.group("id")
+                directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
+                expected_identifier = "IDX-ROOT" if not directory else CLASSIFICATION_INDEXES.get(directory)
+                if expected_identifier is not None and identifier != expected_identifier:
+                    issues.append(Issue("KB_CLASSIFICATION_ID", record.path, f"directory index id must be {expected_identifier}"))
+                if directory:
+                    parent_directory = directory.rsplit("/", 1)[0] if "/" in directory else ""
+                    expected_parent = indexes_by_directory.get(parent_directory)
+                    if expected_parent is not None and f"|{expected_parent}]]" not in str(relations[0]):
+                        issues.append(Issue("KB_CLASSIFICATION_PARENT", record.path, f"classification must point to direct parent {expected_parent}"))
                 continue
             directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
-            expected_index = next(
-                (index for prefix, index in CLASSIFICATION_INDEXES.items() if directory == prefix or directory.startswith(prefix + "/")),
-                None,
-            )
-            if expected_index is not None and f"|{expected_index}]]" not in str(relations[0]):
+            expected_index = indexes_by_directory.get(directory)
+            if expected_index is None:
+                issues.append(Issue("KB_CLASSIFICATION_README", record.path, "knowledge directory must contain a README knowledge_index"))
+            elif f"|{expected_index}]]" not in str(relations[0]):
                 issues.append(Issue("KB_CLASSIFICATION_DIRECTORY", record.path, f"classification must match directory index {expected_index}"))
+    for identifier in classification_parents:
+        visited: set[str] = set()
+        current = identifier
+        while current in classification_parents:
+            if current in visited:
+                issues.append(Issue("KB_CLASSIFICATION_CYCLE", classification_ids[identifier].path, f"classification cycle contains {current}"))
+                break
+            visited.add(current)
+            current = classification_parents[current]
     return issues

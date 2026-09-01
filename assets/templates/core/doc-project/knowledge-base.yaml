@@ -3,7 +3,7 @@ project_name: {{PROJECT_NAME}}
 knowledge_base_name: {{KNOWLEDGE_BASE_NAME}}
 workspace_profile: {{WORKSPACE_PROFILE}}
 project_version: 0.1.0
-format_version: 11
+format_version: 12
 knowledge_revision: 1
 created_by:
   product: context-atlas

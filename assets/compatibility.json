@@ -11,59 +11,65 @@
     8,
     9,
     10,
-    11
+    11,
+    12
   ],
-  "created_format_version": 11,
+  "created_format_version": 12,
   "conversions": [
     {
       "from": 1,
-      "to": 11,
+      "to": 12,
       "id": "embedded-sources-and-knowledge-governance"
     },
     {
       "from": 2,
-      "to": 11,
+      "to": 12,
       "id": "knowledge-governance-layout-and-embedded-sources"
     },
     {
       "from": 3,
-      "to": 11,
+      "to": 12,
       "id": "embedded-sources"
     },
     {
       "from": 4,
-      "to": 11,
+      "to": 12,
       "id": "typed-knowledge-and-simplified-contract-layout"
     },
     {
       "from": 5,
-      "to": 11,
+      "to": 12,
       "id": "changes-and-evidence-without-task-packages"
     },
     {
       "from": 6,
-      "to": 11,
+      "to": 12,
       "id": "specification-readiness-and-change-workspaces"
     },
     {
       "from": 7,
-      "to": 11,
+      "to": 12,
       "id": "unified-version-model-and-knowledge-granularity"
     },
     {
       "from": 8,
-      "to": 11,
+      "to": 12,
       "id": "embedded-acceptance-and-concrete-interfaces"
     },
     {
       "from": 9,
-      "to": 11,
+      "to": 12,
       "id": "feature-integrated-design-and-acceptance"
     },
     {
       "from": 10,
-      "to": 11,
+      "to": 12,
       "id": "readme-classification-and-current-layout"
+    },
+    {
+      "from": 11,
+      "to": 12,
+      "id": "requirement-body-authority-and-readiness-decoupling"
     }
   ]
 }
