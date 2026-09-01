@@ -9,6 +9,8 @@ rel_classified_under: []
 
 本目录是 `{{KNOWLEDGE_BASE_NAME}}`，由 AI Agent 与项目责任人协作维护。先读本页，再读 [AI 知识采集协议](./05-知识治理/AI知识采集协议.md)。机器入口为 `knowledge-base.yaml`。
 
+本知识库只保存经过治理的当前项目知识、可追溯证据和历史归档；不保存无长期价值的日志、秘密或未确认猜测。目录成员通过分类关系动态查询，不维护重复的人工清单。
+
 ## 权威入口
 
 - [项目总览](./00-项目总览/README.md)
@@ -17,7 +19,6 @@ rel_classified_under: []
 - 关系由 `.project-kb/schemas/relation-catalog.json` 统一定义
 - [变更与证据](./03-变更与证据/README.md)
 - 影响记录模板位于 `.project-kb/templates/knowledge/impact-record.md`，仅按需保存需审计的人工结论。
-- [决策记录](./04-决策记录/README.md)
 - [知识治理](./05-知识治理/README.md)
 - [使用场景](./05-知识治理/使用场景.md)：初始化、需求、数据库、摄取、查询和维护入口
 - [历史归档](./90-历史归档/README.md)
@@ -36,7 +37,6 @@ rel_classified_under: []
 ├─ 01-功能基线/              # 需求、功能和能力地图
 ├─ 02-技术基线/            # 架构、模块、接口、数据库和契约
 ├─ 03-变更与证据/            # 规格变化、验收和实际证据
-├─ 04-决策记录/              # 当前有效 ADR
 ├─ 05-知识治理/              # 协作、来源和维护规则
 └─ 90-历史归档/              # 已退出当前权威的历史
 ```
@@ -47,7 +47,6 @@ rel_classified_under: []
 | `01-功能基线` | 需求、功能、能力地图和验收引用 | 不保存开发计划 |
 | `02-技术基线` | 系统架构、模块、具体接口、数据库、数据资产、原型和外部依赖 | 不保存功能自身设计或临时排查过程 |
 | `03-变更与证据` | 当前变更、规格 Delta、验收矩阵、实际证据和待确认知识 | 不替代长期产品定义或外部任务系统 |
-| `04-决策记录` | 已确认 ADR 及其后果 | 不保存未确认讨论 |
 | `05-知识治理` | 协作规则、使用场景、来源资料和维护说明 | 不保存产品开发计划 |
 | `90-历史归档` | 已替代但具有审计价值的历史 | 不作为当前需求、设计或完成状态来源 |
 | `Clippings` | 等待显式摄取的外部原文件 | 不等于正式知识或批准正文 |
@@ -57,7 +56,7 @@ rel_classified_under: []
 
 ## 格式要求
 
-本知识库当前磁盘格式为 `format_version: 12`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。需求的业务内容以正文为唯一权威，Front Matter 只保存机器索引字段。只有 `format_version` 参与兼容判断；`project_version`、`knowledge_revision` 和领域对象版本各自保持独立语义。
+本知识库当前磁盘格式为 `format_version: 13`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。需求的业务内容以正文为唯一权威，决策依据归入所属需求、功能、技术或治理文档。只有 `format_version` 参与兼容判断；`project_version`、`knowledge_revision` 和领域对象版本各自保持独立语义。
 
 通用格式示例：
 

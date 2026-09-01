@@ -11,6 +11,9 @@ if __package__ in {None, ""}:
     sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from scripts.project_kb.initializer import initialize_from_assets
+from scripts.project_kb.compatibility import CompatibilityPolicy
+from scripts.project_kb.discovery import discover_records
+from scripts.project_kb.migration import apply_migration, build_migration_proposal
 
 
 DATE = "2026-08-10"
@@ -206,7 +209,6 @@ def _populate_example(root: Path, name: str) -> None:
         ("02-技术基线/数据库/DB-001.md", "DB-001", "知识项存储"),
         ("02-技术基线/原型/PROTO-001.md", "PROTO-001", "查询流程原型"),
         ("02-技术基线/外部依赖/EXT-001.md", "EXT-001", "示例时钟依赖"),
-        ("04-决策记录/ADR-001.md", "ADR-001", "采用版本化知识项"),
     ]
     for relative, identifier, title in records:
         _approved_item(
@@ -236,7 +238,6 @@ def _populate_example(root: Path, name: str) -> None:
             "current_slice": "included",
             "depends_on": [],
             "acceptance": ["F01-AC-01"],
-            "adr": ["ADR-001"],
             "database": ["DB-001"],
             "prototypes": ["PROTO-001"],
             "external_dependencies": ["EXT-001"],
@@ -326,7 +327,7 @@ def _generate_invalid_fixtures(root: Path) -> None:
             metadata["status"] = "conflicted"
             metadata["sources"] = ["SRC-001", "SRC-002"]
         elif name == "broken-traceability":
-            metadata["adr"] = ["ADR-MISSING"]
+            metadata["depends_on"] = ["F-MISSING-001"]
         elif name == "sensitive-material":
             body += "\n\nSERVICE_TOKEN=real-sensitive-value"
         elif name == "archived-reference":
@@ -373,14 +374,21 @@ def _generate_invalid_fixtures(root: Path) -> None:
         _record(case / relative, metadata, body)
 
 
-def generate() -> None:
+def generate(*, force: bool = False) -> None:
     """重新生成全部示例、无效夹具和结构快照。"""
 
     examples = Path("examples")
     fixtures = Path("tests/fixtures/invalid")
     snapshot = Path("tests/snapshots/expected-structures.json")
     if examples.exists() or fixtures.exists() or snapshot.exists():
-        raise FileExistsError("example, fixture, or snapshot output already exists")
+        if not force:
+            raise FileExistsError("example, fixture, or snapshot output already exists")
+        if examples.exists():
+            shutil.rmtree(examples)
+        if fixtures.exists():
+            shutil.rmtree(fixtures)
+        if snapshot.exists():
+            snapshot.unlink()
     examples.mkdir()
     try:
         temporary = Path(".context-atlas-example-generation")
@@ -395,7 +403,24 @@ def generate() -> None:
                     assets_root=Path("."),
                     initialized_at=DATE,
                 )
+                manifest = materialized / "knowledge-base.yaml"
+                manifest.write_text(
+                    manifest.read_text(encoding="utf-8").replace("format_version: 13", "format_version: 3"),
+                    encoding="utf-8",
+                )
                 _populate_example(materialized, name)
+                policy = CompatibilityPolicy.load(Path("compatibility.json"))
+                records, discovery_issues = discover_records(materialized, frozenset())
+                if discovery_issues:
+                    raise ValueError(f"example discovery failed: {discovery_issues}")
+                proposal = build_migration_proposal(
+                    materialized,
+                    records,
+                    policy,
+                )
+                if proposal.unresolved:
+                    raise ValueError(f"example migration unresolved: {proposal.unresolved}")
+                apply_migration(materialized, proposal, proposal.proposal_revision)
                 shutil.copytree(materialized, examples / name)
         finally:
             shutil.rmtree(temporary, ignore_errors=True)
@@ -420,4 +445,4 @@ def generate() -> None:
 
 
 if __name__ == "__main__":
-    generate()
+    generate(force="--force" in sys.argv[1:])

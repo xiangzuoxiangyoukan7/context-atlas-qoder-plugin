@@ -34,7 +34,6 @@ FACT_GROUPS = {
     "databases",
     "external_dependencies",
     "tests",
-    "adrs",
 }
 
 
@@ -175,7 +174,7 @@ def validate_initialization_proposal(proposal: object) -> dict[str, Any]:
     for group in (
         "goals", "boundaries_in", "boundaries_out", "terms", "capabilities",
         "features", "modules", "interfaces", "databases",
-        "external_dependencies", "tests", "adrs",
+        "external_dependencies", "tests",
     ):
         normalized_facts[group] = [
             _fact(item, f"proposal.facts.{group}[{index}]")

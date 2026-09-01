@@ -9,7 +9,6 @@
     "current_slice",
     "depends_on",
     "acceptance",
-    "adr",
     "last_updated"
   ],
   "enums": {
@@ -27,5 +26,6 @@
     "last_updated": "\\d{4}-\\d{2}-\\d{2}"
   },
   "non_empty_lists": ["acceptance"],
-  "unique_lists": ["depends_on", "acceptance", "adr", "sources", "blocking_questions"]
+  "unique_lists": ["depends_on", "acceptance", "sources", "blocking_questions"],
+  "forbidden": ["adr"]
 }

@@ -16,7 +16,6 @@ ACCEPTANCE_RESULTS = {"not_started", "partial", "passed", "not_applicable"}
 SOURCE_TYPES = {"user_statement", "repository_file", "command_output", "existing_document", "external_document", "ai_inference"}
 REFERENCE_FIELDS = (
     "depends_on",
-    "adr",
     "database",
     "prototypes",
     "external_dependencies",

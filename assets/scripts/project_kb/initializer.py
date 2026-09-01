@@ -22,7 +22,6 @@ OBSIDIAN_COLOR_GROUPS = (
     ("[type:interface]", 16753920),
     ("[type:database_table OR database_unit OR database_namespace OR data_source]", 3447003),
     ("[type:data_asset]", 16766720),
-    ("[type:adr]", 16744448),
     ("[type:specification_change OR specification_delta]", 10040012),
 )
 
@@ -264,8 +263,8 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
         _render_observed_item(root, item, "02-技术基线/数据库", "IDX-DATABASE")
     for item in facts["external_dependencies"]:
         _render_observed_item(root, item, "02-技术基线/外部依赖", "IDX-DEPENDENCIES")
-    for item in facts["adrs"]:
-        _render_observed_item(root, item, "04-决策记录", "IDX-DECISIONS")
+    # 格式 13 不建立独立 ADR；初始化发现的决策候选必须归入所属知识，
+    # 无法判断归属的内容由后续维护流程放入待确认知识。
 
     test_items = facts["tests"]
     assert isinstance(test_items, list)
@@ -342,6 +341,9 @@ def initialize_from_assets(
         staging.mkdir()
         try:
             shutil.copytree(template, staging, dirs_exist_ok=True)
+            legacy_decisions = staging / "04-决策记录"
+            if legacy_decisions.is_dir() and not any(legacy_decisions.iterdir()):
+                legacy_decisions.rmdir()
             _replace_markers(
                 staging,
                 {
@@ -356,7 +358,11 @@ def initialize_from_assets(
                 _render_confirmed_content(staging, proposal)
             if workspace_profile == "obsidian":
                 _materialize_obsidian_profile(staging)
-            shutil.copytree(assets_root / "scripts", staging / ".project-kb" / "scripts")
+            shutil.copytree(
+                assets_root / "scripts",
+                staging / ".project-kb" / "scripts",
+                ignore=shutil.ignore_patterns("__pycache__", "*.pyc"),
+            )
             shutil.copytree(schema_root, staging / ".project-kb" / "schemas")
             shutil.copy2(
                 assets_root / "compatibility.json",

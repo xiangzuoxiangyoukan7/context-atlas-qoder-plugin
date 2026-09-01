@@ -23,7 +23,7 @@
     "facts": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["goals", "boundaries_in", "boundaries_out", "technology_stacks", "terms", "capabilities", "features", "modules", "interfaces", "databases", "external_dependencies", "tests", "adrs"],
+      "required": ["goals", "boundaries_in", "boundaries_out", "technology_stacks", "terms", "capabilities", "features", "modules", "interfaces", "databases", "external_dependencies", "tests"],
       "properties": {
         "goals": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
         "boundaries_in": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
@@ -36,8 +36,7 @@
         "interfaces": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
         "databases": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
         "external_dependencies": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
-        "tests": {"type": "array", "items": {"$ref": "#/$defs/fact"}},
-        "adrs": {"type": "array", "items": {"$ref": "#/$defs/fact"}}
+        "tests": {"type": "array", "items": {"$ref": "#/$defs/fact"}}
       }
     },
     "unknowns": {"type": "array", "items": {"$ref": "#/$defs/open_item"}},

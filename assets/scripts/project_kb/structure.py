@@ -19,7 +19,6 @@ REQUIRED_ENTRIES = (
     "01-功能基线/需求/README.md", "01-功能基线/功能/README.md",
     "02-技术基线/README.md",
     "02-技术基线/系统架构.md", "03-变更与证据/README.md",
-    "04-决策记录/README.md",
     "05-知识治理/README.md", "05-知识治理/AI知识采集协议.md",
     "90-历史归档/README.md",
 )
@@ -47,6 +46,10 @@ CLASSIFICATION_INDEXES = {
     "02-技术基线/模块": "IDX-MODULES",
     "02-技术基线/接口": "IDX-INTERFACES",
     "02-技术基线/数据库": "IDX-DATABASE",
+    "02-技术基线/数据库/数据源": "IDX-DATA-SOURCES",
+    "02-技术基线/数据库/数据库单元": "IDX-DATABASE-UNITS",
+    "02-技术基线/数据库/数据命名空间": "IDX-DATABASE-NAMESPACES",
+    "02-技术基线/数据库/数据表": "IDX-DATABASE-TABLES",
     "02-技术基线/数据资产": "IDX-DATA-ASSETS",
     "02-技术基线/外部依赖": "IDX-DEPENDENCIES",
     "02-技术基线/原型": "IDX-PROTOTYPES",
@@ -55,8 +58,8 @@ CLASSIFICATION_INDEXES = {
     "03-变更与证据/验收证据": "IDX-EVIDENCE",
     "03-变更与证据/待确认知识": "IDX-PROPOSALS",
     "03-变更与证据": "IDX-CHANGES-EVIDENCE",
-    "04-决策记录": "IDX-DECISIONS",
     "05-知识治理/来源资料": "IDX-SOURCES",
+    "05-知识治理/公共来源": "IDX-COMMON-SOURCES",
     "05-知识治理": "IDX-GOVERNANCE",
     "90-历史归档": "IDX-ARCHIVE",
 }
@@ -80,6 +83,7 @@ LEGACY_FIXED = {
     "03-变更与证据/验收矩阵.md",
     "90-历史归档/旧契约",
     "90-历史归档/旧验收契约",
+    "04-决策记录",
 }
 
 
@@ -96,6 +100,24 @@ def _authorities(path: Path) -> list[str]:
             continue
         if in_authority and line.startswith("  ") and ":" in line:
             result.append(line.split(":", 1)[1].strip().strip("'\""))
+        elif in_authority and line.strip():
+            break
+    return result
+
+
+def _authority_keys(path: Path) -> list[str]:
+    """读取 authority 映射的键，用于拒绝最新格式的废弃入口。"""
+
+    if not path.is_file():
+        return []
+    result: list[str] = []
+    in_authority = False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if line == "authority:":
+            in_authority = True
+            continue
+        if in_authority and line.startswith("  ") and ":" in line:
+            result.append(line.strip().split(":", 1)[0])
         elif in_authority and line.strip():
             break
     return result
@@ -129,9 +151,11 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
             issues.append(Issue("KB_AUTHORITY_MISSING", root / "knowledge-base.yaml", f"authority target does not exist: {relative}"))
     for relative in LEGACY_FIXED:
         path = root / relative
-        if path.exists():
+        if path.exists() and (not path.is_dir() or any(path.iterdir())):
             issues.append(Issue("KB_STRUCTURE_LEGACY", path, f"legacy fixed entry remains: {relative}"))
     format_version = _format_version(root / "knowledge-base.yaml")
+    if format_version >= 13 and "decisions" in _authority_keys(root / "knowledge-base.yaml"):
+        issues.append(Issue("KB_AUTHORITY_LEGACY", root / "knowledge-base.yaml", "format 13 forbids authority.decisions"))
     record_list = list(records)
     if format_version >= 11:
         archive_readme = root / "90-历史归档/README.md"

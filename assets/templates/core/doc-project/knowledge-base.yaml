@@ -3,7 +3,7 @@ project_name: {{PROJECT_NAME}}
 knowledge_base_name: {{KNOWLEDGE_BASE_NAME}}
 workspace_profile: {{WORKSPACE_PROFILE}}
 project_version: 0.1.0
-format_version: 12
+format_version: 13
 knowledge_revision: 1
 created_by:
   product: context-atlas
@@ -13,5 +13,4 @@ authority:
   features: 01-功能基线/README.md
   technical_baseline: 02-技术基线/README.md
   evidence: 03-变更与证据/README.md
-  decisions: 04-决策记录/README.md
   collaboration: 05-知识治理/AI知识采集协议.md

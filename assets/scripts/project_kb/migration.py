@@ -363,13 +363,60 @@ FORMAT11_LEGACY_DIRECTORIES = (
     "03-变更与证据/验收契约",
 )
 
+
+def _format13_decision_item(content: str) -> str:
+    """把无法安全并入业务文档的旧 ADR 无损转为待确认通用知识。"""
+
+    content = re.sub(r"(?m)^type:\s*adr\s*$", "type: knowledge_item", content)
+    content = re.sub(r"(?m)^status:\s*accepted\s*$", "status: missing", content)
+    content = re.sub(
+        r'(?ms)^rel_classified_under:\s*\n(?:\s+-.*\n)+',
+        'rel_classified_under:\n  - "[[03-变更与证据/待确认知识/README|IDX-PROPOSALS]]"\n',
+        content,
+    )
+    return content
+
+
+def _format13_document(content: str) -> str:
+    """移除格式 13 已废弃的功能 ADR 引用字段。"""
+
+    return re.sub(r"(?ms)^adr:\s*.*?(?=^[A-Za-z_][A-Za-z0-9_-]*:|^---\s*$)", "", content)
+
+
+def _format13_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[MigrationRemoval, ...], tuple[MigrationUnresolved, ...]]:
+    """移除独立决策目录，并把尚未人工归属的真实内容移入待确认知识。"""
+
+    decision_root = root / "04-决策记录"
+    moves: list[MigrationMove] = []
+    removals: list[MigrationRemoval] = []
+    unresolved: list[MigrationUnresolved] = []
+    if decision_root.is_dir():
+        for source in sorted(path for path in decision_root.rglob("*") if path.is_file()):
+            if source.name == "README.md":
+                removals.append(MigrationRemoval(source, _digest(source.read_bytes())))
+                continue
+            target = root / "03-变更与证据" / "待确认知识" / source.name
+            if target.exists():
+                unresolved.append(MigrationUnresolved(source, source.stem, "待确认知识目标文件已存在"))
+            else:
+                moves.append(MigrationMove(source, target, _digest(source.read_bytes())))
+    legacy_template = root / ".project-kb" / "templates" / "knowledge" / "adr.md"
+    if legacy_template.is_file():
+        removals.append(MigrationRemoval(legacy_template, _digest(legacy_template.read_bytes())))
+    return tuple(moves), tuple(removals), tuple(unresolved)
+
 FORMAT11_CLASSIFICATION_INDEXES = {
     "00-项目总览": "IDX-OVERVIEW",
+    "01-功能基线": "IDX-FUNCTIONAL-BASELINE",
     "01-功能基线/需求": "IDX-REQUIREMENTS",
     "01-功能基线/功能": "IDX-FEATURES",
     "02-技术基线/模块": "IDX-MODULES",
     "02-技术基线/接口": "IDX-INTERFACES",
     "02-技术基线/数据库": "IDX-DATABASE",
+    "02-技术基线/数据库/数据源": "IDX-DATA-SOURCES",
+    "02-技术基线/数据库/数据库单元": "IDX-DATABASE-UNITS",
+    "02-技术基线/数据库/数据命名空间": "IDX-DATABASE-NAMESPACES",
+    "02-技术基线/数据库/数据表": "IDX-DATABASE-TABLES",
     "02-技术基线/数据资产": "IDX-DATA-ASSETS",
     "02-技术基线/外部依赖": "IDX-DEPENDENCIES",
     "02-技术基线/原型": "IDX-PROTOTYPES",
@@ -380,6 +427,7 @@ FORMAT11_CLASSIFICATION_INDEXES = {
     "03-变更与证据": "IDX-CHANGES-EVIDENCE",
     "04-决策记录": "IDX-DECISIONS",
     "05-知识治理/来源资料": "IDX-SOURCES",
+    "05-知识治理/公共来源": "IDX-COMMON-SOURCES",
     "05-知识治理": "IDX-GOVERNANCE",
     "Clippings": "IDX-CLIPPINGS",
 }
@@ -468,17 +516,19 @@ def _format11_classification(relative: str, identifier: str | None) -> str | Non
     if identifier == "IDX-ROOT":
         return "rel_classified_under: []"
     directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
-    index = next(
-        (value for prefix, value in FORMAT11_CLASSIFICATION_INDEXES.items()
-         if directory == prefix or directory.startswith(prefix + "/")),
-        None,
-    )
+    if relative.endswith("/README.md") and identifier and identifier.startswith("IDX-"):
+        if "/" not in directory:
+            return 'rel_classified_under:\n  - "[[README|IDX-ROOT]]"'
+        directory = directory.rsplit("/", 1)[0]
+    matches = [
+        (prefix, value) for prefix, value in FORMAT11_CLASSIFICATION_INDEXES.items()
+        if directory == prefix or directory.startswith(prefix + "/")
+    ]
+    match = max(matches, key=lambda item: len(item[0]), default=None)
+    index = match[1] if match else None
     if index is None:
         return None
-    prefix = directory if directory in FORMAT11_CLASSIFICATION_INDEXES else next(
-        prefix for prefix in FORMAT11_CLASSIFICATION_INDEXES
-        if directory == prefix or directory.startswith(prefix + "/")
-    )
+    prefix = match[0]
     return f'rel_classified_under:\n  - "[[{prefix}/README|{index}]]"'
 
 
@@ -622,10 +672,10 @@ def _format12_requirement(content: str) -> str:
     source_table = "| 类型 | 精确定位 | 观察时间 | 确认状态 | 确认时间 |\n| --- | --- | --- | --- | --- |"
     source_table += "\n" + ("\n".join(source_rows) if source_rows else "| existing_document | 格式 11 原需求元数据 | 待确认 | observed | — |")
     body = _append_requirement_section(body, "来源与确认", source_table)
-    readiness_match = re.search(r"(?m)^spec_readiness:\s*(\S+)\s*$", metadata)
+    readiness_match = re.search(r"(?m)^(?:spec_readiness|readiness):\s*(\S+)\s*$", metadata)
     readiness = readiness_match.group(1) if readiness_match else "draft"
     removed = (
-        "approval_status", "lifecycle_status", "spec_readiness", "stakeholders",
+        "approval_status", "lifecycle_status", "spec_readiness", "readiness", "stakeholders",
         "business_rules", "success_criteria", "assumptions", "blocking_questions", "sources",
     )
     for key in removed:
@@ -728,6 +778,11 @@ def build_migration_proposal(
         moves += format_moves
         removals += format_removals
         layout_unresolved += format_unresolved
+    if result.creates_format_version >= 13:
+        format_moves, format_removals, format_unresolved = _format13_layout(resolved_root)
+        moves += format_moves
+        removals += format_removals
+        layout_unresolved += format_unresolved
     destinations = {move.target for move in moves}
     for move in _evidence_layout(resolved_root):
         if move.target.exists() or move.target in destinations:
@@ -738,13 +793,14 @@ def build_migration_proposal(
             moves += (move,)
             destinations.add(move.target)
     for source_id, record in source_records.items():
-        if source_id not in referenced_source_ids:
-            unresolved.append(MigrationUnresolved(record.path.resolve(), source_id, "来源未被任何知识项引用，不能安全删除"))
         try:
             relative = record.path.resolve().relative_to(resolved_root)
         except ValueError:
             unresolved.append(MigrationUnresolved(record.path.resolve(), source_id, "公共来源路径逃逸知识库"))
             continue
+        already_common = relative.as_posix().startswith("05-知识治理/公共来源/")
+        if source_id not in referenced_source_ids and not already_common:
+            unresolved.append(MigrationUnresolved(record.path.resolve(), source_id, "来源未被任何知识项引用，不能安全删除"))
         if relative.parts and relative.parts[0] == "00-项目总览":
             destination = resolved_root / "05-知识治理" / "公共来源" / record.path.name
             if destination.exists():
@@ -771,6 +827,8 @@ def build_migration_proposal(
                         MigrationUnresolved(path.resolve(), path.name, str(error)),
                     )
                     continue
+            if result.creates_format_version >= 13:
+                normalized = _format13_document(normalized)
             if normalized == original:
                 continue
             rewrites = tuple(
@@ -781,6 +839,32 @@ def build_migration_proposal(
         sorted(unresolved, key=lambda item: (str(item.path), item.source_id))
     )
     creations = _current_format_creations(resolved_root)
+    common_sources = resolved_root / "05-知识治理" / "公共来源"
+    common_readme = common_sources / "README.md"
+    if common_sources.is_dir() and not common_readme.exists():
+        content = (
+            "---\nid: IDX-COMMON-SOURCES\ntype: knowledge_index\ntitle: 公共来源\n"
+            "rel_classified_under:\n  - \"[[05-知识治理/README|IDX-GOVERNANCE]]\"\n---\n"
+            "# 公共来源\n\n本目录只保存多个知识项共同引用的去重来源；单项知识仍须自带可定位来源。\n"
+        )
+        creations += (MigrationCreation(common_readme.resolve(), content, _digest(content.encode("utf-8"))),)
+    nested_indexes = {
+        "02-技术基线/数据库/数据源": ("IDX-DATA-SOURCES", "数据源"),
+        "02-技术基线/数据库/数据库单元": ("IDX-DATABASE-UNITS", "数据库单元"),
+        "02-技术基线/数据库/数据命名空间": ("IDX-DATABASE-NAMESPACES", "数据命名空间"),
+        "02-技术基线/数据库/数据表": ("IDX-DATABASE-TABLES", "数据表"),
+    }
+    for relative, (identifier, title) in nested_indexes.items():
+        directory = resolved_root / relative
+        readme = directory / "README.md"
+        if not directory.is_dir() or readme.exists():
+            continue
+        content = (
+            f"---\nid: {identifier}\ntype: knowledge_index\ntitle: {title}\n"
+            "rel_classified_under:\n  - \"[[02-技术基线/数据库/README|IDX-DATABASE]]\"\n---\n"
+            f"# {title}\n\n本目录按稳定身份保存{title}知识。\n"
+        )
+        creations += (MigrationCreation(readme.resolve(), content, _digest(content.encode("utf-8"))),)
     assets = _current_format_assets(resolved_root)
     return MigrationProposal(
         proposal_revision=_revision(
@@ -888,6 +972,12 @@ def _set_format_version(content: str, target_version: int) -> str:
     return "".join(lines)
 
 
+def _format13_manifest(content: str) -> str:
+    """移除格式 13 已废弃的独立决策 authority。"""
+
+    return re.sub(r"(?m)^\s{2}decisions:\s*.*(?:\r?\n)?", "", content)
+
+
 def _atomic_write(path: Path, content: str) -> None:
     """在目标目录写入临时文件并原子替换单个知识文件。"""
 
@@ -937,6 +1027,7 @@ def apply_migration(
         raise ValueError("migration proposal contains unresolved source references")
     resolved_root = root.resolve()
     prepared: list[tuple[Path, str]] = []
+    rewrite_by_path = {rewrite.path.resolve(): rewrite for rewrite in proposal.rewrites}
     for change in proposal.changes:
         try:
             change.path.relative_to(resolved_root)
@@ -945,9 +1036,9 @@ def apply_migration(
         data = change.path.read_bytes()
         if _digest(data) != change.original_digest:
             raise ValueError(f"migration target changed after proposal: {change.path.name}")
-        prepared.append(
-            (change.path, _add_supported_by(data.decode("utf-8"), change.links))
-        )
+        rewrite = rewrite_by_path.get(change.path.resolve())
+        base_content = rewrite.content if rewrite is not None and rewrite.content is not None else data.decode("utf-8")
+        prepared.append((change.path, _add_supported_by(base_content, change.links)))
     for move in proposal.moves:
         if _digest(move.source.read_bytes()) != move.original_digest:
             raise ValueError(f"migration target changed after proposal: {move.source.name}")
@@ -979,6 +1070,8 @@ def apply_migration(
         manifest.read_text(encoding="utf-8"), proposal.target_version
     )
     manifest_content = _rewrite_governance_paths(manifest_content)
+    if proposal.target_version >= 13:
+        manifest_content = _format13_manifest(manifest_content)
     manifest_content = (
         manifest_content
         .replace("03-变更与证据/验收矩阵.md", "03-变更与证据/验收证据/README.md")
@@ -1005,12 +1098,18 @@ def apply_migration(
                 )
                 if proposal.target_version >= 12:
                     normalized = _format12_requirement(normalized)
+                if proposal.target_version >= 13 and move.source.parent.name == "04-决策记录":
+                    normalized = _format13_decision_item(normalized)
+                if proposal.target_version >= 13:
+                    normalized = _format13_document(normalized)
                 if move.target.name == "README.md":
                     normalized = _rewrite_governance_paths(normalized, governance_readme=True)
                 _atomic_write(move.target, normalized)
         for removal in proposal.removals:
             removal.path.unlink()
         for rewrite in proposal.rewrites:
+            if rewrite.path.resolve() in {path.resolve() for path, _ in prepared}:
+                continue
             _atomic_write(
                 rewrite.path,
                 rewrite.content
