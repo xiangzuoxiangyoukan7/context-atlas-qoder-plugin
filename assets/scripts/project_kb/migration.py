@@ -358,7 +358,6 @@ FORMAT11_REMOVALS = {
     "03-变更与证据/验收矩阵.md",
 }
 
-<<<<<<< HEAD
 FORMAT11_LEGACY_DIRECTORIES = (
     "02-技术基线/独立契约",
     "03-变更与证据/验收契约",
@@ -385,8 +384,6 @@ FORMAT11_CLASSIFICATION_INDEXES = {
     "Clippings": "IDX-CLIPPINGS",
 }
 
-=======
->>>>>>> origin/main
 
 def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[MigrationRemoval, ...], tuple[MigrationUnresolved, ...]]:
     """把旧技术目录迁入格式 11，并删除可再生或已退役的物理文件。"""
@@ -397,7 +394,6 @@ def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[Migra
     legacy_technical = root / "02-架构与契约"
     if legacy_technical.is_dir():
         for source in sorted(path for path in legacy_technical.rglob("*") if path.is_file()):
-<<<<<<< HEAD
             # TEMPLATE.md 是旧模板占位文件，由下面的删除计划处理，不能同时迁移。
             if source.name == "TEMPLATE.md":
                 continue
@@ -416,18 +412,12 @@ def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[Migra
             if source.relative_to(legacy_technical).as_posix() == "关系目录.md":
                 removals.append(MigrationRemoval(source, _digest(source.read_bytes())))
                 continue
-=======
->>>>>>> origin/main
             target = root / "02-技术基线" / source.relative_to(legacy_technical)
             if target.exists():
                 unresolved.append(MigrationUnresolved(source, source.stem, "新旧技术基线路径同时存在"))
             else:
                 moves.append(MigrationMove(source, target, _digest(source.read_bytes())))
-<<<<<<< HEAD
     for relative in sorted(FORMAT11_REMOVALS):
-=======
-    for relative in FORMAT11_REMOVALS:
->>>>>>> origin/main
         path = root / relative
         if path.is_file():
             removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
@@ -438,7 +428,6 @@ def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[Migra
     for path in sorted(root.rglob("TEMPLATE.md")):
         if ".project-kb" not in path.parts:
             removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
-<<<<<<< HEAD
     for relative in FORMAT11_LEGACY_DIRECTORIES:
         directory = root / relative
         if not directory.is_dir():
@@ -543,9 +532,6 @@ def _initialized_at(root: Path) -> str | None:
         manifest.read_text(encoding="utf-8"),
     )
     return match.group(1) if match else None
-=======
-    return tuple(moves), tuple(removals), tuple(unresolved)
->>>>>>> origin/main
 
 
 def build_migration_proposal(
@@ -561,7 +547,7 @@ def build_migration_proposal(
 
     resolved_root = root.resolve()
     result = policy.diagnose(resolved_root)
-    if not result.conversion_available:
+    if not result.conversion_available and result.format_version != result.creates_format_version:
         raise ValueError("current format has no applicable conversion")
     record_list = list(records)
     sources = _source_paths(record_list)
@@ -572,19 +558,6 @@ def build_migration_proposal(
     }
     changes: list[MigrationChange] = []
     unresolved: list[MigrationUnresolved] = []
-    if result.creates_format_version >= 10:
-        for record in record_list:
-            legacy_type = record.metadata.get("type")
-            if legacy_type not in {"contract", "independent_contract", "acceptance_contract"}:
-                continue
-            identifier = str(record.metadata.get("id", record.path.stem))
-            unresolved.append(
-                MigrationUnresolved(
-                    record.path.resolve(),
-                    identifier,
-                    "遗留契约必须先通过知识维护 Proposal 归入需求、功能或具体技术对象",
-                )
-            )
     referenced_source_ids: set[str] = set()
     for record in record_list if result.format_version <= 3 else ():
         if record.metadata.get("type") == "source":
@@ -876,6 +849,11 @@ def apply_migration(
         manifest.read_text(encoding="utf-8"), proposal.target_version
     )
     manifest_content = _rewrite_governance_paths(manifest_content)
+    manifest_content = (
+        manifest_content
+        .replace("03-变更与证据/验收矩阵.md", "03-变更与证据/验收证据/README.md")
+        .replace("03-变更与证据/当前变更.md", "03-变更与证据/README.md")
+    )
     affected = {path for path, _ in prepared} | {item.source for item in proposal.moves} | {item.target for item in proposal.moves} | {item.path for item in proposal.removals} | {item.path for item in proposal.rewrites} | {item.path for item in proposal.creations} | {item.path for item in proposal.assets} | {manifest}
     backups = {path: path.read_bytes() if path.is_file() else None for path in affected}
     existing_directories = {
