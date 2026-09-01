@@ -1,3 +1,10 @@
+---
+id: IDX-GOVERNANCE
+type: knowledge_index
+title: 知识治理
+rel_classified_under:
+  - "[[README|IDX-ROOT]]"
+---
 # 知识治理
 
 - [AI 知识采集协议](./AI知识采集协议.md)：持久化治理说明和无 Skill 时的最低兼容入口。

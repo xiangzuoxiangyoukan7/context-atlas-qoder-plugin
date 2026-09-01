@@ -165,6 +165,8 @@ def _card(item: SourceImportItem, imported_at: datetime) -> str:
         f"    observed_at: {timestamp}\n"
         "    confirmation_status: confirmed\n"
         f"    confirmed_at: {timestamp}\n"
+        "rel_classified_under:\n"
+        "  - \"[[05-知识治理/来源资料/README|IDX-SOURCES]]\"\n"
         f"last_updated: {date_text}\n"
         "---\n"
         f"# {item.source_id}\n\n此文件是受管来源证据；保存不表示批准其中的业务内容。\n"

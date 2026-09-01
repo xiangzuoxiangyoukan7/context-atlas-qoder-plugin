@@ -167,7 +167,7 @@ def _migration_proposal(root: Path, compatibility: Path) -> object:
     """发现知识记录并建立当前文件状态对应的只读迁移提案。"""
 
     records, issues = discover_records(
-        root.resolve(), frozenset({".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
+        root.resolve(), frozenset({".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
     )
     if issues:
         messages = "; ".join(f"{issue.code}: {issue.message}" for issue in issues)

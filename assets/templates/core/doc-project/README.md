@@ -1,15 +1,22 @@
+---
+id: IDX-ROOT
+type: knowledge_index
+title: 知识库
+rel_classified_under: []
+---
+<!-- context-atlas-rules: [[rules/知识治理规则#RULE-GOV-003|RULE-GOV-003]] [[rules/知识治理规则#RULE-REL-002|RULE-REL-002]] -->
 # {{PROJECT_NAME}} 项目知识库
 
-本目录是 `{{KNOWLEDGE_BASE_NAME}}`，由 AI Agent 与项目责任人协作维护。先读本页，再读 [AI 知识采集协议](./05-知识治理/AI知识采集协议.md)。[当前变更](./03-变更与证据/当前变更.md)只记录知识库已知的变化，不控制用户或其他插件执行任务。机器入口为 `knowledge-base.yaml`。
+本目录是 `{{KNOWLEDGE_BASE_NAME}}`，由 AI Agent 与项目责任人协作维护。先读本页，再读 [AI 知识采集协议](./05-知识治理/AI知识采集协议.md)。机器入口为 `knowledge-base.yaml`。
 
 ## 权威入口
 
 - [项目总览](./00-项目总览/README.md)
 - [功能基线](./01-功能基线/README.md)
-- [架构与契约](./02-架构与契约/README.md)
-- [关系目录](./02-架构与契约/关系目录.md)：统一关系链接的写法与读取方式
+- [架构与契约](./02-技术基线/README.md)
+- 关系由 `.project-kb/schemas/relation-catalog.json` 统一定义
 - [变更与证据](./03-变更与证据/README.md)
-- [影响记录模板](./03-变更与证据/影响记录/TEMPLATE.md)：仅按需保存需审计的人工结论
+- 影响记录模板位于 `.project-kb/templates/knowledge/impact-record.md`，仅按需保存需审计的人工结论。
 - [决策记录](./04-决策记录/README.md)
 - [知识治理](./05-知识治理/README.md)
 - [使用场景](./05-知识治理/使用场景.md)：初始化、需求、数据库、摄取、查询和维护入口
@@ -27,7 +34,7 @@
 ├─ .project-kb/              # Schema、检查器和运行资产
 ├─ 00-项目总览/              # 项目定位、边界和术语
 ├─ 01-功能基线/              # 需求、功能和能力地图
-├─ 02-架构与契约/            # 架构、模块、接口、数据库和契约
+├─ 02-技术基线/            # 架构、模块、接口、数据库和契约
 ├─ 03-变更与证据/            # 规格变化、验收和实际证据
 ├─ 04-决策记录/              # 当前有效 ADR
 ├─ 05-知识治理/              # 协作、来源和维护规则
@@ -38,7 +45,7 @@
 | --- | --- | --- |
 | `00-项目总览` | 项目定位、职责边界、术语 | 不保存具体实现和临时任务 |
 | `01-功能基线` | 需求、功能、能力地图和验收引用 | 不保存开发计划 |
-| `02-架构与契约` | 系统架构、模块、具体接口、数据库、数据资产、原型和外部依赖 | 不保存功能自身设计或临时排查过程 |
+| `02-技术基线` | 系统架构、模块、具体接口、数据库、数据资产、原型和外部依赖 | 不保存功能自身设计或临时排查过程 |
 | `03-变更与证据` | 当前变更、规格 Delta、验收矩阵、实际证据和待确认知识 | 不替代长期产品定义或外部任务系统 |
 | `04-决策记录` | 已确认 ADR 及其后果 | 不保存未确认讨论 |
 | `05-知识治理` | 协作规则、使用场景、来源资料和维护说明 | 不保存产品开发计划 |
@@ -50,7 +57,7 @@
 
 ## 格式要求
 
-本知识库当前磁盘格式为 `format_version: 10`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。只有 `format_version` 参与兼容判断；`project_version`、`knowledge_revision` 和领域对象版本各自保持独立语义。
+本知识库当前磁盘格式为 `format_version: 11`，并由 `knowledge-base.yaml` 声明。正式知识项采用 Markdown 正文和 YAML Front Matter，字段以 `.project-kb/schemas/` 中当前 Schema 为机器权威。只有 `format_version` 参与兼容判断；`project_version`、`knowledge_revision` 和领域对象版本各自保持独立语义。
 
 通用格式示例：
 

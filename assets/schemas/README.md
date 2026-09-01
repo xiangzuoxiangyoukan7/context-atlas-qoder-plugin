@@ -17,11 +17,11 @@ Schema 可以理解为“机器可执行的表格填写规则”：它不保存�
 - [功能](./feature.schema.json)
 - [模块](./module.schema.json)
 - [接口](./interface.schema.json)
-- `contract.schema.json`：格式 1 至 9 遗留独立契约兼容资产，不在格式 10 Catalog 中登记
+- `legacy/contract.schema.json`：格式 1 至 9 遗留独立契约兼容资产，不在格式 11 Catalog 中登记，也不复制到当前知识库
 - [产品任务](./task.schema.json)
 - [治理任务](./governance-task.schema.json)
 - [验收](./acceptance.schema.json)
-- `acceptance-contract.schema.json`：格式 1 至 9 遗留验收契约兼容资产，不在格式 10 Catalog 中登记
+- `legacy/acceptance-contract.schema.json`：格式 1 至 9 遗留验收契约兼容资产，不在格式 11 Catalog 中登记，也不复制到当前知识库
 - [规格变更](./specification-change.schema.json)
 - [规格增量](./specification-delta.schema.json)
 - [知识来源](./source.schema.json)

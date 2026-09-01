@@ -86,7 +86,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     try:
         catalog = RelationCatalog.load(args.schema_root / "relation-catalog.json")
         records, discovery_issues = discover_records(
-            root, frozenset({".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
+            root, frozenset({".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
         )
         index, relation_issues = RelationIndex.build(root, records, catalog)
     except (OSError, ValueError) as error:

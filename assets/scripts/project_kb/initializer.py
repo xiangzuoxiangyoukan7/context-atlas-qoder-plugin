@@ -15,6 +15,7 @@ from .agent_entry import apply_entry
 MARKER_PATTERN = re.compile(r"{{[A-Z][A-Z0-9_]*}}")
 
 OBSIDIAN_COLOR_GROUPS = (
+    ("[type:knowledge_index]", 10027212),
     ("[type:requirement]", 14701138),
     ("[type:feature]", 4360181),
     ("[type:module]", 39423),
@@ -124,12 +125,14 @@ def _render_module(root: Path, item: dict[str, object]) -> None:
     lines = [
         "---", f"id: {identifier}", "type: module", f"title: {identifier}",
         f"status: {_knowledge_status(item)}", f"paths: [{_cell(source['reference'])}]", "sources:",
-        *_embedded_source_lines(item), "rel_provides: []", "rel_calls: []", "rel_depends_on: []",
+        *_embedded_source_lines(item), "rel_classified_under:",
+        '  - "[[02-技术基线/模块/README|IDX-MODULES]]"',
+        "rel_provides: []", "rel_calls: []", "rel_depends_on: []",
         f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}", "",
         "## 职责", "", _cell(item["value"]), "", "## 明确不负责", "", "待确认。", "",
         "## 允许依赖与禁止依赖", "", "待确认。", "",
     ]
-    (root / "02-架构与契约" / "模块" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "模块" / f"{identifier}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _render_interface(root: Path, item: dict[str, object]) -> None:
@@ -145,12 +148,39 @@ def _render_interface(root: Path, item: dict[str, object]) -> None:
         "---", f"id: {identifier}", "type: interface", f"title: {business_name}",
         f"status: {_knowledge_status(item)}", f"interface_kind: {kinds.get(prefix, 'function')}",
         "visibility: internal", "content_revision: 1", "api_version: v1", "sources:", *_embedded_source_lines(item),
+        "rel_classified_under:", '  - "[[02-技术基线/接口/README|IDX-INTERFACES]]"',
         "rel_reads: []", "rel_writes: []", "rel_depends_on: []", "rel_verified_by: []",
         f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}：{business_name}", "",
         "## 入口、输入与输出", "", _cell(item["value"]), "", "## 错误语义", "", "待确认。", "",
         "## 版本、兼容与敏感字段", "", "待确认。", "",
     ]
-    (root / "02-架构与契约" / "接口" / f"{identifier}-{business_name}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "接口" / f"{identifier}-{business_name}.md").write_text("\n".join(lines), encoding="utf-8", newline="\n")
+
+
+def _render_observed_item(root: Path, item: dict[str, object], directory: str, index_id: str) -> None:
+    """把初始化观察写成单一事实文件，避免覆盖分类 README。"""
+
+    identifier = _cell(item["id"])
+    source = item["source"]
+    assert isinstance(source, dict)
+    title = _cell(item["value"])
+    filename = _interface_business_name(item)
+    status = _knowledge_status(item)
+    approval = [] if status != "approved" else [
+        "approved_by: project_owner",
+        f"approved_at: {str(source.get('confirmed_at', source['observed_at']))[:10]}",
+        "version: 1.0.0",
+    ]
+    lines = [
+        "---", f"id: {identifier}", "type: knowledge_item", f"title: {title}",
+        f"status: {status}", *approval, "sources:", *_embedded_source_lines(item),
+        "rel_classified_under:", f'  - "[[{directory}/README|{index_id}]]"',
+        f"last_updated: {str(source['observed_at'])[:10]}", "---", f"# {identifier}：{title}", "",
+        "初始化只记录可定位观察；产品含义和设计理由仍需责任人确认。", "",
+    ]
+    target = root / directory / f"{identifier}-{filename}.md"
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
 
 def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
@@ -159,7 +189,11 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     facts = proposal["facts"]
     assert isinstance(facts, dict)
 
-    overview = [f"# {_cell(proposal['project']['name'])} 项目概述", "", "## 项目定位", ""]
+    overview = [
+        "---", "id: OVERVIEW-PROJECT", "type: overview_document", "title: 项目概述",
+        "rel_classified_under:", '  - "[[00-项目总览/README|IDX-OVERVIEW]]"', "---", "",
+        f"# {_cell(proposal['project']['name'])} 项目概述", "", "## 项目定位", "",
+    ]
     goal_items = facts["goals"]
     assert isinstance(goal_items, list)
     if goal_items:
@@ -186,7 +220,11 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     overview.append("")
     (root / "00-项目总览" / "项目概述.md").write_text("\n".join(overview), encoding="utf-8", newline="\n")
 
-    technologies = ["# 系统架构", "", "## 技术基线", "", "| 技术 | 版本 | 使用目录或模块 | 项目用途 | 构建、测试与运行命令 | 配置位置 | 来源 | 状态 |", "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    technologies = [
+        "---", "id: ARCH-001", "type: architecture", "title: 系统架构",
+        "rel_classified_under:", '  - "[[02-技术基线/README|IDX-TECHNICAL-BASELINE]]"', "---", "",
+        "# 系统架构", "", "## 技术基线", "", "| 技术 | 版本 | 使用目录或模块 | 项目用途 | 构建、测试与运行命令 | 配置位置 | 来源 | 状态 |", "| --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
     stacks = facts["technology_stacks"]
     assert isinstance(stacks, list)
     technologies.extend(
@@ -195,7 +233,7 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
     )
     technologies.append("")
     technologies.extend(["", "## 上下文与组件", "", "待确认。", ""])
-    (root / "02-架构与契约" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
+    (root / "02-技术基线" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
 
     def render_table(relative: str, title: str, group: str, headers: tuple[str, ...]) -> None:
         """将一类仓库观察写入其唯一固定文档。"""
@@ -211,16 +249,23 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
         (root / relative).write_text("\n".join(lines), encoding="utf-8", newline="\n")
 
     render_table("00-项目总览/术语表.md", "术语表", "terms", ("术语编号", "名称与含义", "来源", "状态"))
-    capability_items = [*facts["capabilities"], *facts["features"]]
-    facts["_routed_features"] = capability_items
-    render_table("01-功能基线/能力地图.md", "产品能力地图", "_routed_features", ("编号", "能力或功能", "来源", "状态"))
+    glossary = root / "00-项目总览" / "术语表.md"
+    glossary.write_text(
+        "---\nid: GLOSSARY\ntype: overview_document\ntitle: 术语表\nrel_classified_under:\n  - \"[[00-项目总览/README|IDX-OVERVIEW]]\"\n---\n" + glossary.read_text(encoding="utf-8"),
+        encoding="utf-8", newline="\n",
+    )
+    for item in [*facts["capabilities"], *facts["features"]]:
+        _render_observed_item(root, item, "01-功能基线/功能", "IDX-FEATURES")
     for module in facts["modules"]:
         _render_module(root, module)
     for interface in facts["interfaces"]:
         _render_interface(root, interface)
-    render_table("02-架构与契约/数据库/README.md", "数据库知识", "databases", ("数据库编号", "观察事实", "来源", "状态"))
-    render_table("02-架构与契约/外部依赖/README.md", "外部依赖", "external_dependencies", ("依赖编号", "依赖与用途", "来源", "状态"))
-    render_table("04-决策记录/README.md", "决策记录", "adrs", ("ADR 编号", "已有决策摘要", "来源", "状态"))
+    for item in facts["databases"]:
+        _render_observed_item(root, item, "02-技术基线/数据库", "IDX-DATABASE")
+    for item in facts["external_dependencies"]:
+        _render_observed_item(root, item, "02-技术基线/外部依赖", "IDX-DEPENDENCIES")
+    for item in facts["adrs"]:
+        _render_observed_item(root, item, "04-决策记录", "IDX-DECISIONS")
 
     test_items = facts["tests"]
     assert isinstance(test_items, list)
@@ -231,7 +276,7 @@ def _render_confirmed_content(root: Path, proposal: dict[str, object]) -> None:
             for item in test_items
         )
         technologies.append("")
-        (root / "02-架构与契约" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
+        (root / "02-技术基线" / "系统架构.md").write_text("\n".join(technologies), encoding="utf-8", newline="\n")
 
 
 def _safe_project_name(name: str) -> str:

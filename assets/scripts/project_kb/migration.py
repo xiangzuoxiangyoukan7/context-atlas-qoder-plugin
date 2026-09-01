@@ -163,9 +163,18 @@ def _current_format_creations(root: Path) -> tuple[MigrationCreation, ...]:
 
     template_root = Path(__file__).resolve().parents[2] / "templates" / "core" / "doc-project"
     relatives = (
+        Path("01-功能基线/需求/README.md"),
+        Path("01-功能基线/功能/README.md"),
+        Path("02-技术基线/README.md"),
+        Path("02-技术基线/模块/README.md"),
+        Path("02-技术基线/接口/README.md"),
+        Path("02-技术基线/数据库/README.md"),
+        Path("02-技术基线/数据资产/README.md"),
+        Path("02-技术基线/原型/README.md"),
+        Path("02-技术基线/外部依赖/README.md"),
         Path("03-变更与证据/变更/README.md"),
-        Path("03-变更与证据/变更/TEMPLATE.md"),
-        Path("03-变更与证据/变更/Delta/TEMPLATE.md"),
+        Path("03-变更与证据/验收证据/README.md"),
+        Path("03-变更与证据/待确认知识/README.md"),
     )
     creations: list[MigrationCreation] = []
     for relative in relatives:
@@ -207,7 +216,7 @@ def _current_format_assets(root: Path) -> tuple[MigrationAsset, ...]:
         if isinstance(relative, str)
         and (
             relative == "compatibility.json"
-            or relative.startswith(("schemas/", "scripts/", "rules/", "operations/", "templates/"))
+            or relative.startswith(("schemas/", "scripts/", "rules/", "operations/"))
         )
     ]
     selected = sorted([*selected, "manifest.json"])
@@ -225,6 +234,13 @@ def _current_format_assets(root: Path) -> tuple[MigrationAsset, ...]:
         assets.append(
             MigrationAsset(target, content, original_digest, _digest(content))
         )
+    knowledge_templates = source_root / "templates" / "core" / "doc-project" / ".project-kb" / "templates" / "knowledge"
+    for source in sorted(knowledge_templates.glob("*.md")):
+        target = (root / ".project-kb" / "templates" / "knowledge" / source.name).resolve()
+        content = source.read_bytes()
+        original_digest = _digest(target.read_bytes()) if target.is_file() else None
+        if original_digest != _digest(content):
+            assets.append(MigrationAsset(target, content, original_digest, _digest(content)))
     return tuple(assets)
 
 
@@ -316,6 +332,7 @@ def _rewrite_governance_paths(content: str, governance_readme: bool = False) -> 
         .replace("03-实施与验收/影响分析", "03-变更与证据/影响记录")
         .replace("03-实施与验收/知识提案", "03-变更与证据/待确认知识")
         .replace("03-实施与验收", "03-变更与证据")
+        .replace("02-架构与契约", "02-技术基线")
     )
     if governance_readme:
         lines = [
@@ -324,6 +341,42 @@ def _rewrite_governance_paths(content: str, governance_readme: bool = False) -> 
         ]
         result = "\n".join(lines).rstrip() + "\n"
     return result
+
+
+FORMAT11_REMOVALS = {
+    "01-功能基线/能力地图.md",
+    "02-技术基线/关系目录.md",
+    "03-变更与证据/当前变更.md",
+    "03-变更与证据/验收矩阵.md",
+}
+
+
+def _format11_layout(root: Path) -> tuple[tuple[MigrationMove, ...], tuple[MigrationRemoval, ...], tuple[MigrationUnresolved, ...]]:
+    """把旧技术目录迁入格式 11，并删除可再生或已退役的物理文件。"""
+
+    moves: list[MigrationMove] = []
+    removals: list[MigrationRemoval] = []
+    unresolved: list[MigrationUnresolved] = []
+    legacy_technical = root / "02-架构与契约"
+    if legacy_technical.is_dir():
+        for source in sorted(path for path in legacy_technical.rglob("*") if path.is_file()):
+            target = root / "02-技术基线" / source.relative_to(legacy_technical)
+            if target.exists():
+                unresolved.append(MigrationUnresolved(source, source.stem, "新旧技术基线路径同时存在"))
+            else:
+                moves.append(MigrationMove(source, target, _digest(source.read_bytes())))
+    for relative in FORMAT11_REMOVALS:
+        path = root / relative
+        if path.is_file():
+            removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    for directory in (root / "90-历史归档" / "旧契约", root / "90-历史归档" / "旧验收契约"):
+        if directory.is_dir():
+            for path in sorted(item for item in directory.rglob("*") if item.is_file()):
+                removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    for path in sorted(root.rglob("TEMPLATE.md")):
+        if ".project-kb" not in path.parts:
+            removals.append(MigrationRemoval(path, _digest(path.read_bytes())))
+    return tuple(moves), tuple(removals), tuple(unresolved)
 
 
 def build_migration_proposal(
@@ -406,6 +459,11 @@ def build_migration_proposal(
             )
     ordered_changes = tuple(sorted(changes, key=lambda item: str(item.path)))
     moves, removals, rewrites, layout_unresolved = _governance_layout(resolved_root)
+    if result.creates_format_version >= 11:
+        format_moves, format_removals, format_unresolved = _format11_layout(resolved_root)
+        moves += format_moves
+        removals += format_removals
+        layout_unresolved += format_unresolved
     destinations = {move.target for move in moves}
     for move in _evidence_layout(resolved_root):
         if move.target.exists() or move.target in destinations:
@@ -670,6 +728,15 @@ def apply_migration(
             asset.path.parent.mkdir(parents=True, exist_ok=True)
             _atomic_write_bytes(asset.path, asset.content)
         _atomic_write(manifest, manifest_content)
+        for directory in sorted(
+            (path for path in resolved_root.rglob("*") if path.is_dir()),
+            key=lambda path: len(path.parts),
+            reverse=True,
+        ):
+            try:
+                directory.rmdir()
+            except OSError:
+                pass
     except Exception:
         for path, content in backups.items():
             if content is None:

@@ -2,6 +2,16 @@
   "version": 1,
   "relations": [
     {
+      "field": "rel_classified_under",
+      "name_zh": "归入该知识分类",
+      "source_prefixes": ["*"],
+      "target_prefixes": ["IDX"],
+      "direction": "forward_only",
+      "status": "active",
+      "default_impact": "informational",
+      "impact_rules": {"removed": "required", "renamed": "review_required", "formatting_only": "informational", "file_moved": "informational"}
+    },
+    {
       "field": "rel_belongs_to",
       "name_zh": "属于该数据库层级",
       "source_prefixes": ["DB", "NS", "TABLE"],

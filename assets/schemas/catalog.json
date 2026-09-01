@@ -8,6 +8,7 @@
   "feature": "feature.schema.json",
   "governance_task": "governance-task.schema.json",
   "interface": "interface.schema.json",
+  "knowledge_index": "knowledge-index.schema.json",
   "knowledge_proposal": "knowledge-proposal.schema.json",
   "knowledge_item": "knowledge-item.schema.json",
   "module": "module.schema.json",

@@ -1,0 +1,10 @@
+{
+  "required": ["id", "type", "title", "rel_classified_under"],
+  "enums": {
+    "type": ["knowledge_index"]
+  },
+  "patterns": {
+    "id": "IDX-[A-Z0-9_-]+"
+  },
+  "unique_lists": ["rel_classified_under"]
+}

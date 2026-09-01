@@ -1,3 +1,10 @@
+---
+id: IDX-ARCHIVE
+type: knowledge_index
+title: 历史归档
+rel_classified_under:
+  - "[[README|IDX-ROOT]]"
+---
 # 历史归档
 
 <!-- context-atlas-rules: [[rules/知识治理规则#RULE-ARCHIVE-001|RULE-ARCHIVE-001]] -->

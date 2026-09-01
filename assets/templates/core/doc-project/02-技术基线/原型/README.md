@@ -1,0 +1,14 @@
+---
+id: IDX-PROTOTYPES
+type: knowledge_index
+title: 原型
+rel_classified_under:
+  - "[[02-技术基线/README|IDX-TECHNICAL-BASELINE]]"
+---
+# 原型与交互
+
+| 原型编号 | 场景 | 载体/引用 | 关键状态 | 关联功能 | 来源 | 状态 |
+| --- | --- | --- | --- | --- | --- | --- |
+| PROTO-001 | 示例流程 | 外部链接或仓库路径 | 默认/异常 | F01 | SRC-001 | proposed |
+
+原型只作为交互证据，不自动覆盖功能和接口契约。无法访问或版本未知时记录外部依赖和待确认项。
