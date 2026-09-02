@@ -405,7 +405,7 @@ def generate(*, force: bool = False) -> None:
                 )
                 manifest = materialized / "knowledge-base.yaml"
                 manifest.write_text(
-                    manifest.read_text(encoding="utf-8").replace("format_version: 13", "format_version: 3"),
+                    manifest.read_text(encoding="utf-8").replace("format_version: 14", "format_version: 3"),
                     encoding="utf-8",
                 )
                 _populate_example(materialized, name)

@@ -13,69 +13,75 @@
     10,
     11,
     12,
-    13
+    13,
+    14
   ],
-  "created_format_version": 13,
+  "created_format_version": 14,
   "conversions": [
     {
       "from": 1,
-      "to": 13,
+      "to": 14,
       "id": "embedded-sources-and-knowledge-governance"
     },
     {
       "from": 2,
-      "to": 13,
+      "to": 14,
       "id": "knowledge-governance-layout-and-embedded-sources"
     },
     {
       "from": 3,
-      "to": 13,
+      "to": 14,
       "id": "embedded-sources"
     },
     {
       "from": 4,
-      "to": 13,
+      "to": 14,
       "id": "typed-knowledge-and-simplified-contract-layout"
     },
     {
       "from": 5,
-      "to": 13,
+      "to": 14,
       "id": "changes-and-evidence-without-task-packages"
     },
     {
       "from": 6,
-      "to": 13,
+      "to": 14,
       "id": "specification-readiness-and-change-workspaces"
     },
     {
       "from": 7,
-      "to": 13,
+      "to": 14,
       "id": "unified-version-model-and-knowledge-granularity"
     },
     {
       "from": 8,
-      "to": 13,
+      "to": 14,
       "id": "embedded-acceptance-and-concrete-interfaces"
     },
     {
       "from": 9,
-      "to": 13,
+      "to": 14,
       "id": "feature-integrated-design-and-acceptance"
     },
     {
       "from": 10,
-      "to": 13,
+      "to": 14,
       "id": "readme-classification-and-current-layout"
     },
     {
       "from": 11,
-      "to": 13,
+      "to": 14,
       "id": "requirement-body-authority-and-readiness-decoupling"
     },
     {
       "from": 12,
-      "to": 13,
+      "to": 14,
       "id": "decision-content-integration-and-current-layout"
+    },
+    {
+      "from": 13,
+      "to": 14,
+      "id": "data-asset-independence-and-obsidian-color-quality"
     }
   ]
 }

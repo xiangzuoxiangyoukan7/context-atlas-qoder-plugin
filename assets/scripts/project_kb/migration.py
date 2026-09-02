@@ -12,6 +12,7 @@ from typing import Iterable
 
 from .compatibility import CompatibilityPolicy
 from .model import DocumentRecord
+from .obsidian import graph_text, read_graph
 
 
 @dataclass(frozen=True)
@@ -706,6 +707,19 @@ def _initialized_at(root: Path) -> str | None:
     return match.group(1) if match else None
 
 
+def _format14_document(content: str) -> str:
+    """为旧数据资产补齐待确认的独立性依据，不猜测业务归属。"""
+
+    if not re.search(r"(?m)^type:\s*data_asset\s*$", content):
+        return content
+    if re.search(r"(?m)^independence_basis:", content):
+        return content
+    match = re.search(r"(?m)^sensitivity:.*$", content)
+    if not match:
+        return content
+    return content[:match.start()] + "independence_basis: [missing]\n" + content[match.start():]
+
+
 def build_migration_proposal(
     root: Path,
     records: Iterable[DocumentRecord],
@@ -829,6 +843,8 @@ def build_migration_proposal(
                     continue
             if result.creates_format_version >= 13:
                 normalized = _format13_document(normalized)
+            if result.creates_format_version >= 14:
+                normalized = _format14_document(normalized)
             if normalized == original:
                 continue
             rewrites = tuple(
@@ -839,6 +855,15 @@ def build_migration_proposal(
         sorted(unresolved, key=lambda item: (str(item.path), item.source_id))
     )
     creations = _current_format_creations(resolved_root)
+    graph_path = resolved_root / ".obsidian" / "graph.json"
+    if (resolved_root / ".obsidian").is_dir():
+        if graph_path.is_file():
+            normalized_graph = graph_text(read_graph(graph_path))
+            if normalized_graph != graph_path.read_text(encoding="utf-8"):
+                rewrites += (MigrationRewrite(graph_path.resolve(), _digest(graph_path.read_bytes()), normalized_graph),)
+        else:
+            content = graph_text()
+            creations += (MigrationCreation(graph_path.resolve(), content, _digest(content.encode("utf-8"))),)
     common_sources = resolved_root / "05-知识治理" / "公共来源"
     common_readme = common_sources / "README.md"
     if common_sources.is_dir() and not common_readme.exists():
@@ -1102,6 +1127,8 @@ def apply_migration(
                     normalized = _format13_decision_item(normalized)
                 if proposal.target_version >= 13:
                     normalized = _format13_document(normalized)
+                if proposal.target_version >= 14:
+                    normalized = _format14_document(normalized)
                 if move.target.name == "README.md":
                     normalized = _rewrite_governance_paths(normalized, governance_readme=True)
                 _atomic_write(move.target, normalized)

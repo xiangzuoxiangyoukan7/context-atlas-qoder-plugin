@@ -5,8 +5,8 @@ from __future__ import annotations
 from datetime import date
 from pathlib import Path
 import re
-import json
 import shutil
+from .obsidian import graph_text
 from .validator import ValidationConfig, validate
 from .temporary_workspace import operation_workspace
 from .agent_entry import apply_entry
@@ -14,51 +14,14 @@ from .agent_entry import apply_entry
 
 MARKER_PATTERN = re.compile(r"{{[A-Z][A-Z0-9_]*}}")
 
-OBSIDIAN_COLOR_GROUPS = (
-    ("[type:knowledge_index]", 10027212),
-    ("[type:requirement]", 14701138),
-    ("[type:feature]", 4360181),
-    ("[type:module]", 39423),
-    ("[type:interface]", 16753920),
-    ("[type:database_table OR database_unit OR database_namespace OR data_source]", 3447003),
-    ("[type:data_asset]", 16766720),
-    ("[type:specification_change OR specification_delta]", 10040012),
-)
-
-
 def _materialize_obsidian_profile(root: Path) -> None:
     """创建不含个人状态、插件和工作区布局的最小 Obsidian 配置。"""
 
     settings = root / ".obsidian"
     settings.mkdir()
     (settings / "app.json").write_text("{}\n", encoding="utf-8", newline="\n")
-    graph = {
-        "collapse-filter": False,
-        "search": '-path:"90-历史归档"',
-        "showTags": False,
-        "showAttachments": False,
-        "hideUnresolved": False,
-        "showOrphans": True,
-        "collapse-color-groups": False,
-        "colorGroups": [
-            {"query": query, "color": {"a": 1, "rgb": rgb}}
-            for query, rgb in OBSIDIAN_COLOR_GROUPS
-        ],
-        "collapse-display": True,
-        "showArrow": True,
-        "textFadeMultiplier": 0,
-        "nodeSizeMultiplier": 1,
-        "lineSizeMultiplier": 1,
-        "collapse-forces": True,
-        "centerStrength": 0.5,
-        "repelStrength": 10,
-        "linkStrength": 1,
-        "linkDistance": 250,
-        "scale": 1,
-        "close": False,
-    }
     (settings / "graph.json").write_text(
-        json.dumps(graph, ensure_ascii=False, indent=2) + "\n",
+        graph_text(),
         encoding="utf-8",
         newline="\n",
     )
@@ -341,9 +304,6 @@ def initialize_from_assets(
         staging.mkdir()
         try:
             shutil.copytree(template, staging, dirs_exist_ok=True)
-            legacy_decisions = staging / "04-决策记录"
-            if legacy_decisions.is_dir() and not any(legacy_decisions.iterdir()):
-                legacy_decisions.rmdir()
             _replace_markers(
                 staging,
                 {

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Iterable
 
 from .discovery import discover_records
+from .obsidian import TYPE_COLORS, read_graph, type_query
 
 
 @dataclass(frozen=True)
@@ -89,10 +90,27 @@ def inspect_health(
             field.startswith("rel_") for field in record.metadata
         ):
             findings.append(HealthFinding("KB_HEALTH_ORPHAN", "warning", path, stable_id, "knowledge item has no declared relationships"))
+    graph_path = root / ".obsidian" / "graph.json"
+    if graph_path.is_file():
+        try:
+            graph = read_graph(graph_path)
+            groups = graph.get("colorGroups", [])
+            queries = [
+                group.get("query") for group in groups
+                if isinstance(group, dict) and isinstance(group.get("query"), str)
+            ] if isinstance(groups, list) else []
+            for document_type in sorted({str(record.metadata.get("type")) for record in records}):
+                expected = type_query(document_type)
+                if document_type not in TYPE_COLORS:
+                    findings.append(HealthFinding("KB_OBSIDIAN_COLOR_TYPE_UNKNOWN", "error", ".obsidian/graph.json", None, f"no managed color for type: {document_type}"))
+                elif queries.count(expected) != 1:
+                    findings.append(HealthFinding("KB_OBSIDIAN_COLOR_COVERAGE", "error", ".obsidian/graph.json", None, f"type must have exactly one managed color group: {document_type}"))
+        except (OSError, ValueError) as error:
+            findings.append(HealthFinding("KB_OBSIDIAN_GRAPH_INVALID", "error", ".obsidian/graph.json", None, str(error)))
     manifest = root / "knowledge-base.yaml"
     if manifest.is_file():
         text = manifest.read_text(encoding="utf-8")
-        for authority in ("overview", "features", "architecture", "acceptance", "decisions", "collaboration"):
+        for authority in ("overview", "features", "technical_baseline", "evidence", "collaboration"):
             if f"  {authority}:" not in text:
                 findings.append(HealthFinding("KB_HEALTH_AUTHORITY_GAP", "error", "knowledge-base.yaml", None, f"missing authority entry: {authority}"))
     ordered = tuple(sorted(findings, key=lambda item: (item.severity, item.code, item.path, item.identifier or "")))

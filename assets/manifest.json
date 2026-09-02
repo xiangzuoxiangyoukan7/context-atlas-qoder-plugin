@@ -91,6 +91,7 @@
     "scripts/project_kb/migration.py",
     "scripts/project_kb/model.py",
     "scripts/project_kb/navigation.py",
+    "scripts/project_kb/obsidian.py",
     "scripts/project_kb/plugin_assets.py",
     "scripts/project_kb/plugin_contract.py",
     "scripts/project_kb/relation_catalog.py",
