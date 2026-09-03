@@ -276,6 +276,36 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
                         "data_source must be stored as DS-*/README.md",
                     )
                 )
+            directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
+            container = data_sources_by_directory.get(directory)
+            if kind in {"database_unit", "database_namespace"}:
+                issues.append(
+                    Issue(
+                        "KB_DATABASE_LEVEL_RETIRED",
+                        record.path,
+                        f"{kind} is retired; merge database/namespace metadata into the containing data source README",
+                    )
+                )
+            if kind == "database_table" and container is not None:
+                if relations not in (None, []):
+                    issues.append(
+                        Issue(
+                            "KB_DATABASE_TABLE_DIRECT_CLASSIFICATION",
+                            record.path,
+                            "database table must not classify directly under IDX-DATABASE; rel_belongs_to provides the data-source hierarchy",
+                        )
+                    )
+                if not _relation_targets_identifier(
+                    record.metadata.get("rel_belongs_to"), container
+                ):
+                    issues.append(
+                        Issue(
+                            "KB_DATABASE_TABLE_DATASOURCE",
+                            record.path,
+                            f"database table must belong to containing data source {container}",
+                        )
+                    )
+                continue
             if not isinstance(relations, list) or len(relations) != 1:
                 issues.append(Issue("KB_CLASSIFICATION_REQUIRED", record.path, "format 11+ knowledge must have exactly one rel_classified_under"))
                 continue
@@ -328,8 +358,6 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
                     if expected_parent is not None and f"|{expected_parent}]]" not in str(relations[0]):
                         issues.append(Issue("KB_CLASSIFICATION_PARENT", record.path, f"classification must point to direct parent {expected_parent}"))
                 continue
-            directory = relative.rsplit("/", 1)[0] if "/" in relative else ""
-            container = data_sources_by_directory.get(directory)
             if container is not None:
                 data_source_id = container
                 expected_index = indexes_by_directory.get(DATABASE_ROOT)
@@ -347,16 +375,6 @@ def validate_structure(root: Path, records: Iterable[DocumentRecord]) -> list[Is
                             "KB_CLASSIFICATION_DIRECTORY",
                             record.path,
                             f"data source member must be classified under {expected_index}",
-                        )
-                    )
-                if kind == "database_table" and not _relation_targets_identifier(
-                    record.metadata.get("rel_belongs_to"), data_source_id
-                ):
-                    issues.append(
-                        Issue(
-                            "KB_DATABASE_TABLE_DATASOURCE",
-                            record.path,
-                            f"database table must belong to containing data source {data_source_id}",
                         )
                     )
                 continue

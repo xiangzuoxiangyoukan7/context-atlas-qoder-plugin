@@ -461,6 +461,56 @@ def _current_format_readme_rewrites(
     return tuple(sorted(rewrites.values(), key=lambda item: str(item.path)))
 
 
+def _remove_frontmatter_field(content: str, field: str) -> str:
+    """删除一个受限 Front Matter 字段及其缩进子行。"""
+
+    lines = content.splitlines(keepends=True)
+    if not lines or lines[0].rstrip("\r\n") != "---":
+        return content
+    closing = next(
+        (index for index, line in enumerate(lines[1:], start=1) if line.rstrip("\r\n") == "---"),
+        None,
+    )
+    if closing is None:
+        return content
+    prefix = f"{field}:"
+    start = next(
+        (index for index, line in enumerate(lines[1:closing], start=1) if line.startswith(prefix)),
+        None,
+    )
+    if start is None:
+        return content
+    end = start + 1
+    while end < closing and lines[end].startswith((" ", "\t")):
+        end += 1
+    return "".join(lines[:start] + lines[end:])
+
+
+def _current_database_table_rewrites(
+    root: Path,
+    records: Iterable[DocumentRecord],
+    existing: Iterable[MigrationRewrite] = (),
+) -> tuple[MigrationRewrite, ...]:
+    """确定性移除表到数据库根索引的冗余分类边。"""
+
+    rewrites = {item.path.resolve(): item for item in existing}
+    for record in records:
+        if record.metadata.get("type") != "database_table":
+            continue
+        relations = record.metadata.get("rel_classified_under")
+        if not isinstance(relations, list) or len(relations) != 1:
+            continue
+        if not any("|IDX-DATABASE]]" in str(relation) for relation in relations):
+            continue
+        path = record.path.resolve()
+        original = record.path.read_text(encoding="utf-8")
+        base = rewrites[path].content if path in rewrites and rewrites[path].content is not None else original
+        normalized = _remove_frontmatter_field(base, "rel_classified_under")
+        if normalized != original:
+            rewrites[path] = MigrationRewrite(path, _digest(record.path.read_bytes()), normalized)
+    return tuple(sorted(rewrites.values(), key=lambda item: str(item.path)))
+
+
 def _asset_source_root() -> Path:
     """定位源码仓库或已安装插件中的运行资产根。"""
 
@@ -1121,6 +1171,9 @@ def build_migration_proposal(
     rewrites = tuple(
         item for item in rewrites if item.path.resolve() not in readme_paths
     ) + readme_rewrites
+    rewrites = _current_database_table_rewrites(
+        resolved_root, record_list, rewrites
+    )
     unresolved.extend(layout_unresolved)
     ordered_unresolved = tuple(
         sorted(unresolved, key=lambda item: (str(item.path), item.source_id))

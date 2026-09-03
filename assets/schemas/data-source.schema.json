@@ -1,5 +1,5 @@
 {
-  "required": ["id", "type", "title", "status", "product", "product_version", "owner", "config_reference", "environments", "sources", "last_updated"],
+  "required": ["id", "type", "title", "status", "product", "product_version", "owner", "config_reference", "database", "namespace", "environments", "sources", "last_updated"],
   "enums": {
     "type": ["data_source"],
     "status": ["missing", "proposed", "approved", "conflicted", "stale", "superseded", "archived"],

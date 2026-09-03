@@ -12,8 +12,6 @@ ddl_sources: [missing]
 rel_belongs_to:
   - "[[02-技术基线/数据库/DS-DOMAIN-NAME/README|DS-DOMAIN-NAME]]"
 last_updated: {{INITIALIZED_AT}}
-rel_classified_under:
-  - "[[02-技术基线/数据库/README|IDX-DATABASE]]"
 ---
 # TABLE-DOMAIN-NAME：数据表名称
 
