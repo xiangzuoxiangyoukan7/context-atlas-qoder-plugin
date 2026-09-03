@@ -25,6 +25,9 @@ class CompatibilityResult:
     write_blocked: bool
     conversion_available: bool
     created_format_version: int
+    validation_issue_count: int = 0
+    health_finding_count: int = 0
+    blocking_health_finding_count: int = 0
 
     @property
     def creates_format_version(self) -> int:

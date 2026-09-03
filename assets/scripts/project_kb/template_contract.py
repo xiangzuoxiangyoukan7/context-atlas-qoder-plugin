@@ -45,7 +45,6 @@ def required_template_paths() -> Sequence[Path]:
             "03-变更与证据/变更/README.md",
             "03-变更与证据/验收证据/README.md",
             "03-变更与证据/待确认知识/README.md",
-            "04-决策记录/README.md",
             "05-知识治理/README.md",
             "05-知识治理/来源资料/README.md",
             "05-知识治理/AI知识采集协议.md",
@@ -62,6 +61,5 @@ def required_template_paths() -> Sequence[Path]:
             ".project-kb/templates/knowledge/specification-delta.md",
             ".project-kb/templates/knowledge/acceptance-evidence.md",
             ".project-kb/templates/knowledge/knowledge-proposal.md",
-            ".project-kb/templates/knowledge/adr.md",
         )
     )

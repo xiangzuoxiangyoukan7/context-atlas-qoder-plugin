@@ -123,6 +123,11 @@ def _parser() -> argparse.ArgumentParser:
     graph.add_argument("--relation")
     graph.add_argument("--type", dest="node_type")
     graph.add_argument("--status")
+    graph.add_argument(
+        "--expand-classification-members",
+        action="store_true",
+        help="显式允许图查询从 README 分类节点继续展开成员",
+    )
 
     health = subparsers.add_parser("health")
     health.add_argument("knowledge_base_root", type=Path)
@@ -214,17 +219,30 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
             args.compatibility or _default_compatibility()
         )
         result = policy.diagnose(args.knowledge_base_root)
-        if result.format_version == result.created_format_version:
-            issues = validate(
-                args.knowledge_base_root,
-                ValidationConfig(schema_root=_default_assets_root() / "schemas"),
+        issues = validate(
+            args.knowledge_base_root,
+            ValidationConfig(schema_root=_default_assets_root() / "schemas"),
+        )
+        health = inspect_health(args.knowledge_base_root)
+        blocking_health = tuple(
+            finding for finding in health.findings if finding.severity != "warning"
+        )
+        result = replace(
+            result,
+            validation_issue_count=len(issues),
+            health_finding_count=len(health.findings),
+            blocking_health_finding_count=len(blocking_health),
+        )
+        if (
+            result.status != "unsupported"
+            and (issues or blocking_health)
+            and result.format_version == result.created_format_version
+        ):
+            result = replace(
+                result,
+                status="needs_normalization",
+                conversion_available=True,
             )
-            if issues:
-                result = replace(
-                    result,
-                    status="needs_normalization",
-                    conversion_available=True,
-                )
         return result, 2 if result.write_blocked else 0
     if args.operation == "capture":
         candidate = CaptureCandidate(
@@ -275,6 +293,7 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
             relation=args.relation,
             node_type=args.node_type,
             status=args.status,
+            expand_classification_members=args.expand_classification_members,
         ), 0
     if args.operation == "health":
         return inspect_health(
@@ -319,12 +338,25 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
         return proposal, 3 if proposal.unresolved else 0
     if args.proposal_revision != proposal.proposal_revision:
         raise PermissionError("proposal revision no longer matches current files")
-    return (
-        apply_migration(
-            args.knowledge_base_root, proposal, args.confirmed_revision
-        ),
-        0,
+    report = apply_migration(
+        args.knowledge_base_root, proposal, args.confirmed_revision
     )
+    issues = validate(
+        args.knowledge_base_root,
+        ValidationConfig(schema_root=_default_assets_root() / "schemas"),
+    )
+    health = inspect_health(args.knowledge_base_root)
+    blocking_health = tuple(
+        finding for finding in health.findings if finding.severity != "warning"
+    )
+    report = replace(
+        report,
+        status="migrated" if not issues and not blocking_health else "validation_failed",
+        validation_issue_count=len(issues),
+        health_finding_count=len(health.findings),
+        blocking_health_finding_count=len(blocking_health),
+    )
+    return report, 0 if not issues and not blocking_health else 1
 
 
 def main(argv: Sequence[str] | None = None) -> int:

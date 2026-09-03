@@ -11,7 +11,6 @@ priority: P1
 current_slice: included
 depends_on: []
 acceptance: [AC-DOMAIN-001]
-adr: []
 sources: []
 blocking_questions: []
 rel_satisfies:

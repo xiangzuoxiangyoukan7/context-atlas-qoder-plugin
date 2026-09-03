@@ -18,6 +18,7 @@ from .traceability import validate_traceability
 from .structure import validate_structure
 from .archive_validation import discover_archive, validate_current_archive_links
 from .specification import validate_specifications
+from .readme_contract import validate_readme_contracts
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,7 @@ def validate(root: Path, config: ValidationConfig) -> list[Issue]:
 
     records, issues = discover_records(resolved_root, config.excluded_directories)
     issues.extend(validate_structure(resolved_root, records))
+    issues.extend(validate_readme_contracts(resolved_root, records))
     catalog = SchemaCatalog.load(config.schema_root)
     for record in records:
         kind = record.metadata.get("type")

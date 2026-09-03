@@ -1,10 +1,3 @@
----
-id: IDX-CLIPPINGS
-type: knowledge_index
-title: 采集暂存
-rel_classified_under:
-  - "[[README|IDX-ROOT]]"
----
 # 外部文件暂存箱
 
 放入本目录的每个外部文件都必须通过 `context-atlas-ingest` 清点，并在确认维护 Proposal 后保存、判定重复或明确阻塞。除本说明外，本目录内容不参与正式知识校验；失败或阻塞时原文件保持不变。

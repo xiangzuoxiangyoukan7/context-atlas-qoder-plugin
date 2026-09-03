@@ -7,6 +7,7 @@ content_revision: 1
 sources: []
 owner: missing
 source_types: [database]
+independence_basis: [missing]
 sensitivity: missing
 retention: missing
 last_updated: {{INITIALIZED_AT}}
@@ -15,6 +16,8 @@ rel_classified_under:
 ---
 
 # 数据资产名称
+
+只有跨功能复用、跨技术对象，或具有独立负责人、质量、安全、保存周期的数据才建立本卡。单一需求的业务数据规则写入需求，单一功能的局部数据规则写入功能。
 
 ## 基本信息
 

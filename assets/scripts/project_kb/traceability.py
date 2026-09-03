@@ -16,7 +16,6 @@ ACCEPTANCE_RESULTS = {"not_started", "partial", "passed", "not_applicable"}
 SOURCE_TYPES = {"user_statement", "repository_file", "command_output", "existing_document", "external_document", "ai_inference"}
 REFERENCE_FIELDS = (
     "depends_on",
-    "adr",
     "database",
     "prototypes",
     "external_dependencies",
@@ -97,7 +96,14 @@ def _validate_lifecycle(
                     Issue("KB_SOURCE_TYPE", record.path, f"source reference is not a source: {source}")
                 )
         if status == "approved":
-            missing = [field for field in ("approved_by", "approved_at") if not metadata.get(field)]
+            body_authoritative_requirement = (
+                metadata.get("type") == "requirement" and "readiness" in metadata
+            )
+            missing = (
+                []
+                if body_authoritative_requirement
+                else [field for field in ("approved_by", "approved_at") if not metadata.get(field)]
+            )
             if missing:
                 issues.append(
                     Issue(
@@ -106,6 +112,21 @@ def _validate_lifecycle(
                         f"approved item lacks: {', '.join(missing)}",
                     )
                 )
+            if body_authoritative_requirement:
+                source_section = re.search(
+                    r"(?ms)^## 来源与确认\s*\n(.*?)(?=^## |\Z)", record.body
+                )
+                if source_section is None or not re.search(
+                    r"(?mi)^\|.*\|\s*confirmed\s*\|.*\|\s*$",
+                    source_section.group(1),
+                ):
+                    issues.append(
+                        Issue(
+                            "KB_APPROVAL_REQUIRED",
+                            record.path,
+                            "approved requirement requires a confirmed source row in 来源与确认",
+                        )
+                    )
             proposal_revision = metadata.get("proposal_revision")
             confirmed_revision = metadata.get("confirmed_revision")
             if (
@@ -212,6 +233,10 @@ def _validate_references(
     issues: list[Issue] = []
     for record in _records_with_metadata(records):
         for field in REFERENCE_FIELDS:
+            # data_source.database 是物理数据库名称或 missing，不是知识 ID；
+            # 数据库层级关系统一由 rel_belongs_to 表达。
+            if field == "database" and record.metadata.get("type") == "data_source":
+                continue
             for reference in as_list(record.metadata.get(field)):
                 if reference and reference not in ids and not (field == "supersedes" and reference in archived_ids):
                     issues.append(

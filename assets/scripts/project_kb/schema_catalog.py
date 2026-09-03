@@ -53,6 +53,11 @@ class SchemaCatalog:
             return [Issue("KB_SCHEMA_KIND", path, f"unknown schema kind: {kind}")]
 
         issues: list[Issue] = []
+        for field in schema.get("forbidden", []):
+            if field in metadata:
+                issues.append(
+                    Issue("KB_SCHEMA_FORBIDDEN", path, f"forbidden field: {field}")
+                )
         for field in schema.get("required", []):
             if field not in metadata:
                 issues.append(
