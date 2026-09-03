@@ -1,6 +1,6 @@
 {
   "name": "context-atlas",
-  "version": "0.17.3",
+  "version": "0.18.0",
   "displayName": "Context Atlas",
   "description": "通过统一协议初始化、维护和验证项目知识库",
   "author": {

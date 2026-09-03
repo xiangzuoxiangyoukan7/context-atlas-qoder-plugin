@@ -17,6 +17,7 @@ EXPECTED_OPERATION_IDS = frozenset(
         "capture",
         "create",
         "update",
+        "delete",
         "archive",
         "impact-analysis",
         "migrate",

@@ -111,9 +111,9 @@ def sync(destination: Path) -> list[str]:
         raise ValueError(f"发布仓库包含非白名单根路径：{unexpected}")
     expected = {destination / "skills" / name / "SKILL.md" for name in (
         "context-atlas-work", "context-atlas-init", "context-atlas-navigate", "context-atlas-review", "context-atlas-ingest",
-        "context-atlas-add", "context-atlas-revise", "context-atlas-retire", "context-atlas-upgrade")}
+        "context-atlas-add", "context-atlas-revise", "context-atlas-retire", "context-atlas-delete", "context-atlas-upgrade")}
     if set(destination.rglob("SKILL.md")) != expected:
-        raise ValueError("Claude 发布仓库必须且只能包含九个 Context Atlas Skills")
+        raise ValueError("Claude 发布仓库必须且只能包含十个 Context Atlas Skills")
     return [path.relative_to(destination).as_posix() for path in sorted(destination.rglob("*"))
             if path.is_file() and ".git" not in path.relative_to(destination).parts]
 

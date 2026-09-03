@@ -1,11 +1,11 @@
 ---
 name: context-atlas-work
-description: Orchestrate Context Atlas for a concrete development goal or a change that requires more than one knowledge-maintenance operation. Use as the single user-facing coordinator for mixed add, revise, and retire work; do not use for unrelated questions or when the user opts out.
+description: Orchestrate Context Atlas for a concrete development goal or a change that requires more than one knowledge-maintenance operation. Use as the single user-facing coordinator for mixed add, revise, retire, and delete work; do not use for unrelated questions or when the user opts out.
 ---
 
 # Context Atlas Work
 
-Turn a natural-language project task into the smallest useful Context Atlas workflow while preserving the user's authority to start development. This is the user-facing orchestration entry and the only owner of a Proposal that mixes add, revise, and retire operations. The specialized Skills remain direct entry points for one operation kind.
+Turn a natural-language project task into the smallest useful Context Atlas workflow while preserving the user's authority to start development. This is the user-facing orchestration entry and the only owner of a Proposal that mixes add, revise, retire, and delete operations. The specialized Skills remain direct entry points for one operation kind.
 
 An explicit `$context-atlas-work` invocation, or the user's explicit selection of the baseline path after this Skill is automatically chosen, authorizes it to coordinate delegated maintenance; the user does not need to invoke each maintenance Skill again. Neither automatic discovery nor the initial task description is confirmation. Apply only after the user separately confirms the exact Proposal revision.
 
@@ -23,14 +23,14 @@ Read `../../references/执行状态机.md`, `../../references/知识采集与确
 
 After the useful read-only findings, offer these paths when durable knowledge would change:
 
-- **Establish the knowledge baseline, then develop (recommended):** prepare one atomic Proposal containing every required add, revise, or retire operation.
+- **Establish the knowledge baseline, then develop (recommended):** prepare one atomic Proposal containing every required add, revise, retire, or delete operation.
 - **Proceed without formal knowledge updates:** continue the user's development task using the read-only findings; make zero formal knowledge writes and offer reconciliation after implementation.
 
 Do not ask for this choice when the task is purely read-only or no durable knowledge changes are needed. Do not block an explicitly authorized development task merely because the user postpones knowledge maintenance.
 
 ## Baseline path
 
-Route new stable identities to add, changes to an existing identity or replacement by a successor to revise, and withdrawal without creating a successor to retire. Combine dependent operations into one Proposal owned by this Skill. Display every target, fact, source, inference, unknown, conflict, relation, impact, validation step, and immutable `proposal_revision`.
+Route new stable identities to add, changes to an existing identity or replacement by a successor to revise, withdrawal without creating a successor to retire, and permanent removal of knowledge confirmed to have no audit value to delete. Combine dependent operations into one Proposal owned by this Skill. Display every target, fact, source, inference, unknown, conflict, relation, impact, validation step, and immutable `proposal_revision`.
 
 The initial task request is not confirmation. Apply formal knowledge changes only after the user explicitly confirms the exact current revision. Recompute the Proposal immediately before apply, reject stale confirmation, use the deterministic executor, validate the complete knowledge base, and report knowledge validation separately from implementation validation and business confirmation.
 

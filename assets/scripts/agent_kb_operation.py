@@ -27,6 +27,7 @@ from scripts.project_kb.migration import (
 )
 from scripts.project_kb.navigation import query_children, query_graph, query_neighbors
 from scripts.project_kb.updater import UpdateChange, execute_update
+from scripts.project_kb.deletion import apply_delete, build_delete_proposal
 from scripts.project_kb.archive import apply_archive, build_archive_proposal
 from scripts.project_kb.health import inspect_health
 from scripts.project_kb.ingest_enhancements import save_ingest_history
@@ -77,6 +78,14 @@ def _parser() -> argparse.ArgumentParser:
     update.add_argument("--confirmed-revision", required=True)
     update.add_argument("--file", action="append", required=True)
     update.add_argument("--content-file", action="append", required=True)
+
+    for operation in ("delete-propose", "delete-apply"):
+        deletion = subparsers.add_parser(operation)
+        deletion.add_argument("knowledge_base_root", type=Path)
+        deletion.add_argument("--plan", required=True, type=Path)
+        if operation == "delete-apply":
+            deletion.add_argument("--proposal-revision", required=True)
+            deletion.add_argument("--confirmed-revision", required=True)
 
     diagnose = subparsers.add_parser("upgrade-diagnose", aliases=["diagnose-format"])
     diagnose.add_argument("knowledge_base_root", type=Path)
@@ -228,6 +237,14 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
                 UpdateChange(path, Path(content_file))
                 for path, content_file in zip(args.file, args.content_file)
             ),
+        )
+        return report, report.validator_exit_code
+    if args.operation == "delete-propose":
+        proposal = build_delete_proposal(args.knowledge_base_root, args.plan)
+        return proposal, 0 if proposal.preflight_status == "passed" else 3
+    if args.operation == "delete-apply":
+        report = apply_delete(
+            args.knowledge_base_root, args.plan, args.proposal_revision, args.confirmed_revision
         )
         return report, report.validator_exit_code
     if args.operation in {"upgrade-diagnose", "diagnose-format"}:

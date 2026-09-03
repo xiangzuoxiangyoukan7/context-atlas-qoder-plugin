@@ -26,7 +26,7 @@ def render_entry_block(knowledge_base_name: str) -> str:
 
     skills = ", ".join(
         f"`context-atlas-{name}`"
-        for name in ("work", "init", "navigate", "review", "ingest", "add", "revise", "retire", "upgrade")
+        for name in ("work", "init", "navigate", "review", "ingest", "add", "revise", "retire", "delete", "upgrade")
     )
     return "\n".join(
         [
