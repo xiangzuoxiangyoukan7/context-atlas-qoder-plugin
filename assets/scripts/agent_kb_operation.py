@@ -18,7 +18,13 @@ from scripts.project_kb.capture import CaptureCandidate, capture_candidate
 from scripts.project_kb.compatibility import CompatibilityPolicy
 from scripts.project_kb.discovery import discover_records
 from scripts.project_kb.identity import discover_identity_match
-from scripts.project_kb.migration import apply_migration, build_migration_proposal
+from scripts.project_kb.migration import (
+    MigrationReport,
+    apply_migration,
+    build_migration_proposal,
+    merge_agent_migration_plan,
+    preflight_migration,
+)
 from scripts.project_kb.navigation import query_children, query_graph, query_neighbors
 from scripts.project_kb.updater import UpdateChange, execute_update
 from scripts.project_kb.archive import apply_archive, build_archive_proposal
@@ -152,6 +158,10 @@ def _parser() -> argparse.ArgumentParser:
         migration.add_argument(
             "--compatibility", type=Path
         )
+        migration.add_argument(
+            "--agent-plan", type=Path,
+            help="Agent-authored semantic migration decisions JSON",
+        )
         if operation == "upgrade-apply":
             migration.add_argument("--proposal-revision", required=True)
             migration.add_argument("--confirmed-revision", required=True)
@@ -170,8 +180,10 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _migration_proposal(root: Path, compatibility: Path) -> object:
-    """发现知识记录并建立当前文件状态对应的只读迁移提案。"""
+def _migration_proposal(
+    root: Path, compatibility: Path, agent_plan: Path | None = None
+) -> object:
+    """合并确定性转换与 Agent 语义决策，并在隔离副本预演验证。"""
 
     records, issues = discover_records(
         root.resolve(), frozenset({".project-kb", ".obsidian", "Excalidraw", "Clippings", "90-历史归档"})
@@ -180,7 +192,11 @@ def _migration_proposal(root: Path, compatibility: Path) -> object:
         messages = "; ".join(f"{issue.code}: {issue.message}" for issue in issues)
         raise ValueError(f"knowledge discovery failed: {messages}")
     policy = CompatibilityPolicy.load(compatibility)
-    return build_migration_proposal(root, records, policy)
+    proposal = build_migration_proposal(root, records, policy)
+    proposal = merge_agent_migration_plan(root.resolve(), proposal, agent_plan)
+    return preflight_migration(
+        root.resolve(), proposal, _default_assets_root() / "schemas"
+    )
 
 
 def _execute(args: argparse.Namespace) -> tuple[object, int]:
@@ -331,13 +347,22 @@ def _execute(args: argparse.Namespace) -> tuple[object, int]:
             raise PermissionError("proposal revision no longer matches current files")
         return apply_archive(args.knowledge_base_root, proposal, args.confirmed_revision), 0
     proposal = _migration_proposal(
-        args.knowledge_base_root, args.compatibility or _default_compatibility()
+        args.knowledge_base_root,
+        args.compatibility or _default_compatibility(),
+        args.agent_plan,
     )
     if args.operation in {"upgrade-propose", "migrate-propose"}:
-        # 未解析关系属于需要人工处理的有效分析结果，而不是程序崩溃。
-        return proposal, 3 if proposal.unresolved else 0
+        # 未解析或预演失败是供 Agent 继续分析的有效结果，不是程序崩溃。
+        return proposal, 0 if proposal.preflight_status == "passed" else 3
     if args.proposal_revision != proposal.proposal_revision:
         raise PermissionError("proposal revision no longer matches current files")
+    if proposal.preflight_status != "passed":
+        return MigrationReport(
+            "preflight_failed", (), proposal.target_version,
+            len(proposal.preflight_validation_issues),
+            len(proposal.preflight_health_findings),
+            len(proposal.preflight_health_findings),
+        ), 1
     report = apply_migration(
         args.knowledge_base_root, proposal, args.confirmed_revision
     )

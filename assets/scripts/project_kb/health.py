@@ -5,10 +5,21 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date, timedelta
 from pathlib import Path
+import re
 from typing import Iterable
 
 from .discovery import discover_records
 from .obsidian import TYPE_COLORS, read_graph, type_query
+
+
+def _has_body_sources(body: str) -> bool:
+    """识别格式十二以后正文来源表中的至少一条实际来源记录。"""
+
+    match = re.search(r"(?ms)^## 来源与确认\s*$\n(.*?)(?=^## |\Z)", body)
+    if match is None:
+        return False
+    rows = [line.strip() for line in match.group(1).splitlines() if line.strip().startswith("|")]
+    return len(rows) >= 3
 
 
 @dataclass(frozen=True)
@@ -77,7 +88,7 @@ def inspect_health(
         status = record.metadata.get("status")
         if status == "conflicted":
             findings.append(HealthFinding("KB_HEALTH_UNRESOLVED_CONFLICT", "review_required", path, stable_id, "conflicted knowledge requires owner review"))
-        if status == "approved" and not record.metadata.get("sources"):
+        if status == "approved" and not record.metadata.get("sources") and not _has_body_sources(record.body):
             findings.append(HealthFinding("KB_HEALTH_UNVERIFIED_SOURCE", "error", path, stable_id, "approved knowledge has no sources"))
         updated = record.metadata.get("last_updated")
         if isinstance(updated, str):

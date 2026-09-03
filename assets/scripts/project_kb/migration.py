@@ -3,10 +3,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from dataclasses import replace
 import hashlib
 import json
 from pathlib import Path
 import re
+import shutil
 import tempfile
 from typing import Iterable
 
@@ -79,6 +81,18 @@ class MigrationUnresolved:
 
 
 @dataclass(frozen=True)
+class AgentMigrationDecision:
+    """记录 Agent 基于旧知识语义提出的一项可审计迁移判断。"""
+
+    action: str
+    path: str
+    target: str | None
+    reason: str
+    source_paths: tuple[str, ...]
+    source_digests: tuple[str, ...]
+
+
+@dataclass(frozen=True)
 class MigrationProposal:
     """保存只读分析产生的不可变转换范围和确认修订号。"""
 
@@ -92,6 +106,10 @@ class MigrationProposal:
     creations: tuple[MigrationCreation, ...]
     assets: tuple[MigrationAsset, ...]
     unresolved: tuple[MigrationUnresolved, ...]
+    agent_decisions: tuple[AgentMigrationDecision, ...] = ()
+    preflight_status: str = "not_run"
+    preflight_validation_issues: tuple[str, ...] = ()
+    preflight_health_findings: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
@@ -135,6 +153,7 @@ def _revision(
     creations: Iterable[MigrationCreation],
     assets: Iterable[MigrationAsset],
     unresolved: Iterable[MigrationUnresolved],
+    agent_decisions: Iterable[AgentMigrationDecision] = (),
 ) -> str:
     """根据完整提案内容生成稳定且不可猜测的短修订号。"""
 
@@ -167,7 +186,174 @@ def _revision(
         f"unresolved:{item.path}:{item.source_id}:{item.reason}"
         for item in unresolved
     ))
+    parts.extend(sorted(
+        f"agent:{item.action}:{item.path}:{item.target or ''}:{item.reason}:"
+        f"{','.join(item.source_paths)}:{','.join(item.source_digests)}"
+        for item in agent_decisions
+    ))
     return "migration-" + hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:12]
+
+
+def _inside_knowledge_root(root: Path, relative: str) -> Path:
+    """解析 Agent 路径并拒绝绝对路径、目录逃逸和运行资产覆盖。"""
+
+    candidate = Path(relative)
+    if candidate.is_absolute() or ".." in candidate.parts:
+        raise ValueError(f"agent migration path escapes knowledge base: {relative}")
+    normalized = (root / candidate).resolve()
+    normalized.relative_to(root.resolve())
+    if candidate.parts and candidate.parts[0] in {".project-kb", ".obsidian"}:
+        raise ValueError(f"agent migration cannot modify runtime assets: {relative}")
+    if candidate.as_posix() == "knowledge-base.yaml":
+        raise ValueError("agent migration cannot modify knowledge-base.yaml")
+    return normalized
+
+
+def merge_agent_migration_plan(
+    root: Path,
+    proposal: MigrationProposal,
+    plan_path: Path | None,
+) -> MigrationProposal:
+    """把 Agent 的语义迁移决策合入确定性提案并重新计算确认修订号。
+
+    Agent 只提供知识文件的精确创建、改写、移动或删除判断；执行器负责路径边界、
+    原文件摘要、冲突检测与最终预演，避免 Agent 绕过运行资产和确认门禁。
+    """
+
+    if plan_path is None:
+        return proposal
+    payload = json.loads(plan_path.read_text(encoding="utf-8"))
+    raw_decisions = payload.get("decisions") if isinstance(payload, dict) else None
+    if not isinstance(raw_decisions, list) or not raw_decisions:
+        raise ValueError("agent migration plan must contain non-empty decisions")
+    changes = {item.path.resolve(): item for item in proposal.changes}
+    rewrites = {item.path.resolve(): item for item in proposal.rewrites}
+    creations = {item.path.resolve(): item for item in proposal.creations}
+    moves = {(item.source.resolve(), item.target.resolve()): item for item in proposal.moves}
+    removals = {item.path.resolve(): item for item in proposal.removals}
+    decisions: list[AgentMigrationDecision] = []
+    for raw in raw_decisions:
+        if not isinstance(raw, dict):
+            raise ValueError("agent migration decision must be an object")
+        action = raw.get("action")
+        relative = raw.get("path")
+        reason = raw.get("reason")
+        source_paths = raw.get("source_paths")
+        if action not in {"rewrite", "create", "move", "remove"}:
+            raise ValueError("agent migration action must be rewrite, create, move, or remove")
+        if not isinstance(relative, str) or not isinstance(reason, str) or not reason.strip():
+            raise ValueError("agent migration decision requires path and reason")
+        if not isinstance(source_paths, list) or not source_paths or not all(isinstance(item, str) for item in source_paths):
+            raise ValueError("agent migration decision requires source_paths")
+        path = _inside_knowledge_root(root, relative)
+        source_digests: list[str] = []
+        for source_path in source_paths:
+            source = _inside_knowledge_root(root, source_path)
+            if not source.is_file():
+                raise ValueError(f"agent migration source does not exist: {source_path}")
+            source_digests.append(_digest(source.read_bytes()))
+        target_relative = raw.get("target")
+        target = None
+        if action == "rewrite":
+            content = raw.get("content")
+            if not path.is_file() or not isinstance(content, str):
+                raise ValueError("agent rewrite requires an existing file and string content")
+            removals.pop(path, None)
+            rewrites[path] = MigrationRewrite(path, _digest(path.read_bytes()), content)
+        elif action == "create":
+            content = raw.get("content")
+            if path.exists() or not isinstance(content, str):
+                raise ValueError("agent create requires a missing path and string content")
+            creations[path] = MigrationCreation(path, content, _digest(content.encode("utf-8")))
+        elif action == "move":
+            if not isinstance(target_relative, str) or not path.is_file():
+                raise ValueError("agent move requires an existing source and target")
+            target = _inside_knowledge_root(root, target_relative)
+            if target.exists() and (path.resolve(), target.resolve()) not in moves:
+                raise ValueError("agent move target already exists")
+            moves[(path, target)] = MigrationMove(path, target, _digest(path.read_bytes()))
+        else:
+            if not path.is_file():
+                raise ValueError("agent remove requires an existing file")
+            rewrites.pop(path, None)
+            creations.pop(path, None)
+            changes.pop(path, None)
+            moves = {
+                key: value for key, value in moves.items()
+                if value.source.resolve() != path and value.target.resolve() != path
+            }
+            removals[path] = MigrationRemoval(path, _digest(path.read_bytes()))
+        decisions.append(AgentMigrationDecision(
+            action, relative, target_relative if isinstance(target_relative, str) else None,
+            reason.strip(), tuple(source_paths), tuple(source_digests),
+        ))
+    merged = replace(
+        proposal,
+        changes=tuple(sorted(changes.values(), key=lambda item: str(item.path))),
+        rewrites=tuple(sorted(rewrites.values(), key=lambda item: str(item.path))),
+        creations=tuple(sorted(creations.values(), key=lambda item: str(item.path))),
+        moves=tuple(sorted(moves.values(), key=lambda item: (str(item.source), str(item.target)))),
+        removals=tuple(sorted(removals.values(), key=lambda item: str(item.path))),
+        agent_decisions=tuple(decisions),
+    )
+    revision = _revision(
+        merged.source_version, merged.target_version, merged.changes, merged.moves,
+        merged.removals, merged.rewrites, merged.creations, merged.assets,
+        merged.unresolved, merged.agent_decisions,
+    )
+    return replace(merged, proposal_revision=revision)
+
+
+def _remap_proposal(proposal: MigrationProposal, source: Path, target: Path) -> MigrationProposal:
+    """把正式知识库路径映射到隔离预演副本。"""
+
+    def mapped(path: Path) -> Path:
+        """映射一个位于正式知识库内的路径。"""
+
+        return target / path.resolve().relative_to(source.resolve())
+
+    return replace(
+        proposal,
+        changes=tuple(replace(item, path=mapped(item.path)) for item in proposal.changes),
+        moves=tuple(replace(item, source=mapped(item.source), target=mapped(item.target)) for item in proposal.moves),
+        removals=tuple(replace(item, path=mapped(item.path)) for item in proposal.removals),
+        rewrites=tuple(replace(item, path=mapped(item.path)) for item in proposal.rewrites),
+        creations=tuple(replace(item, path=mapped(item.path)) for item in proposal.creations),
+        assets=tuple(replace(item, path=mapped(item.path)) for item in proposal.assets),
+    )
+
+
+def preflight_migration(
+    root: Path,
+    proposal: MigrationProposal,
+    schema_root: Path,
+) -> MigrationProposal:
+    """在隔离副本完整应用并验证 Proposal，正式知识库保持零写入。"""
+
+    from .health import inspect_health
+    from .validator import ValidationConfig, validate
+
+    if proposal.unresolved:
+        return replace(proposal, preflight_status="blocked")
+    with tempfile.TemporaryDirectory(prefix="context-atlas-upgrade-") as directory:
+        staging = Path(directory) / root.resolve().name
+        shutil.copytree(root.resolve(), staging)
+        staged = _remap_proposal(proposal, root.resolve(), staging)
+        apply_migration(staging, staged, staged.proposal_revision)
+        issues = validate(staging, ValidationConfig(schema_root=schema_root))
+        health = inspect_health(staging)
+        blocking = tuple(item for item in health.findings if item.severity != "warning")
+        return replace(
+            proposal,
+            preflight_status="passed" if not issues and not blocking else "failed",
+            preflight_validation_issues=tuple(
+                f"{item.code} {item.path.relative_to(staging).as_posix()}: {item.message}"
+                for item in issues
+            ),
+            preflight_health_findings=tuple(
+                f"{item.code} {item.path}: {item.message}" for item in blocking
+            ),
+        )
 
 
 def _current_format_creations(root: Path) -> tuple[MigrationCreation, ...]:
@@ -1195,6 +1381,11 @@ def apply_migration(
         if directory.is_dir()
     }
     try:
+        # 先更新隔离副本或已确认目标中的运行资产，使后续知识转换始终配套当前工具。
+        # 全部受 affected/backups 事务保护，任一后续步骤失败仍恢复原状态。
+        for asset in proposal.assets:
+            asset.path.parent.mkdir(parents=True, exist_ok=True)
+            _atomic_write_bytes(asset.path, asset.content)
         for path, content in prepared:
             _atomic_write(path, content)
         for move in proposal.moves:
@@ -1231,9 +1422,6 @@ def apply_migration(
         for creation in proposal.creations:
             creation.path.parent.mkdir(parents=True, exist_ok=True)
             _atomic_write(creation.path, creation.content)
-        for asset in proposal.assets:
-            asset.path.parent.mkdir(parents=True, exist_ok=True)
-            _atomic_write_bytes(asset.path, asset.content)
         _atomic_write(manifest, manifest_content)
         for directory in sorted(
             (path for path in resolved_root.rglob("*") if path.is_dir()),

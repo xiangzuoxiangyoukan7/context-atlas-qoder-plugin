@@ -7,18 +7,19 @@ description: Upgrade one existing Context Atlas knowledge base to a supported re
 
 Upgrade only the knowledge representation format and physical structure of an existing Context Atlas knowledge base. Never create, revise, approve, supersede, or archive business facts as part of this workflow.
 
-Read `../../references/兼容与迁移.md`, `../../references/执行状态机.md`, `../../references/验证与结果报告.md`, and `../../references/宿主执行与运行时探测.md` before applying an upgrade. Read the target knowledge base's root `README.md`, `knowledge-base.yaml`, and `.project-kb/compatibility.json` when available.
+Read `../../references/兼容与迁移.md`, `../../references/Agent升级决策.md`, `../../references/执行状态机.md`, `../../references/验证与结果报告.md`, and `../../references/宿主执行与运行时探测.md` before applying an upgrade. Read the target knowledge base's root `README.md`, `knowledge-base.yaml`, and `.project-kb/compatibility.json` when available.
 
 Follow `upgrade-diagnose -> upgrade-propose -> await_confirmation -> upgrade-apply -> validate -> report`:
 
 1. Run `upgrade-diagnose` without writing. Distinguish the installed plugin version, `format_version`, and business `project_version`.
 2. Treat `compatible` as readable-format compatibility only. It is not proof that the knowledge base already has the latest layout, metadata, links, or health.
-3. If status is `needs_normalization` or `conversion_available`, run `upgrade-propose` and show the source and target formats, every changed, moved, or removed path, unresolved items, and `proposal_revision`.
-4. A latest-format knowledge base with structural, metadata, link, authority, or health findings must enter `needs_normalization`; the normalizer must be idempotent and must not require a format-number change.
-5. If status is `unsupported`, or any proposal item cannot be converted equivalently, stop without formal writes and report what requires human resolution. Content that cannot be assigned a business meaning must still be represented as latest-format `knowledge_item` with preserved body/source and `missing` or pending status; it must not be left in a retired legacy type or directory.
-5. Apply only after the user explicitly confirms the exact current `proposal_revision`. Recompute the proposal immediately before apply; reject stale confirmation.
-6. Run the complete deterministic knowledge-base validator and health checker after apply. They must inspect every formal Markdown document's front matter and every managed `README.md` body contract, not merely the presence of fixed files. Report the resulting `format_version`, exact changed paths, validation result, health findings, and remaining unresolved items.
-7. Report `migrated` only when post-apply deterministic validation has zero issues and health has no non-warning findings. Otherwise report `validation_failed`; a completed file conversion is not by itself a successful upgrade.
+3. If status is `needs_normalization` or `conversion_available`, run `upgrade-propose`. The executor upgrades runtime assets and applies deterministic transformations only in an isolated copy, then returns preflight validation and health findings without formal writes.
+4. If deterministic preflight does not pass, inspect each reported document and use Agent reasoning to create a temporary semantic migration plan following `Agent升级决策.md`. Preserve old meaning and source traceability; do not infer business facts. Rerun `upgrade-propose --agent-plan <plan>` until it passes or an actual ambiguity must be reported to the user.
+5. Show the source and target formats, every deterministic operation, every Agent decision with rationale and source paths, unresolved items, preflight results, and `proposal_revision`.
+6. A latest-format knowledge base with structural, metadata, link, authority, or health findings must enter `needs_normalization`; normalization must be idempotent and need not change the format number.
+7. If status is `unsupported`, an Agent decision cannot preserve meaning, or preflight cannot converge, stop with zero formal writes and report what requires human resolution.
+8. Apply only after the user explicitly confirms an exact Proposal whose `preflight_status` is `passed`. Recompute with the same Agent plan immediately before apply; reject stale confirmation.
+9. Run the complete deterministic validator and health checker after apply and report the result. Report `migrated` only with zero validation issues and no non-warning health findings.
 
 Installing or updating the Context Atlas plugin never upgrades a project knowledge base automatically. Upgrade may change only representation, layout, internal metadata, and `format_version`; preserve business meaning, approval state, source traceability, history, and `project_version`.
 

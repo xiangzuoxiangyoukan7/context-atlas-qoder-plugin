@@ -12,6 +12,7 @@
     "operations/release-archive.json",
     "operations/update.json",
     "operations/validate.json",
+    "references/Agent升级决策.md",
     "references/关系与影响分析.md",
     "references/兼容与迁移.md",
     "references/初始化协议.md",
